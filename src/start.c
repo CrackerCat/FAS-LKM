@@ -12,6 +12,6 @@ static int __init fas_init(void) {
 module_init(fas_init);
 
 MODULE_LICENSE("GPL");
- */
+
 MODULE_AUTHOR("Andrea Fioraldi <andreafioraldi@gmail.com>");
 MODULE_DESCRIPTION("FAS: A Linux subsistem for file access with sessions");
