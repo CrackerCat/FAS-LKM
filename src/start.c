@@ -15,7 +15,7 @@ static struct file_operations dev_fops =
 
 static int __init fas_init(void) {
 
-	fas_major_num = register_chrdev(0, DEVICE_NAME, &dev_fops);
+  fas_major_num = register_chrdev(0, DEVICE_NAME, &dev_fops);
   if (fas_major_num < 0) {
   
       FAS_FATAL("Failed to register a major number");
@@ -35,7 +35,7 @@ static int __init fas_init(void) {
 
   FAS_SAY("The major device number is %d", fas_major_num);
 
-	return 0;
+  return 0;
 }
 
 module_init(fas_init);

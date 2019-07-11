@@ -16,7 +16,6 @@
 #include <linux/time.h>
 #include <linux/path.h>
 #include <linux/namei.h>
-#include <linux/ioctl.h>
 #include <linux/kern_levels.h>
 
 /* Output macros */
@@ -46,5 +45,7 @@ extern int fas_major_num; /* Dinamically allocated device number */
 extern struct class *fas_class; /* Class struct for FAS */
 
 long fas_dev_ioctl(struct file *f, unsigned int cmd, unsigned long arg);
+
+int fas_ioctl_open(char* pathname, int flags, mode_t mode);
 
 #endif
