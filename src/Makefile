@@ -1,4 +1,5 @@
-obj-m += start.o
+obj-m += start.o ioctl.o
+EXTRA_CFLAGS = -I$(src)/../include
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
