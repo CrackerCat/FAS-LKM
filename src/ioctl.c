@@ -2,7 +2,7 @@
 
 long fas_dev_ioctl(struct file *f, unsigned int cmd, unsigned long arg) {
 
-  switch (cmp) {
+  switch (cmd) {
     case FAS_IOCTL_NOP:
     break;
   

@@ -1,4 +1,5 @@
-obj-m += start.o ioctl.o
+obj-m += fas.o
+fas-objs := fas.o ioctl.o open.o
 EXTRA_CFLAGS = -I$(src)/../include
 
 all:

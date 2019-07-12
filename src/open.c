@@ -42,44 +42,44 @@ out_err:
 }
 
 int do_fas_tmpfile(struct nameidata *nd, unsigned flags,
-		               const struct open_flags *op, struct file *file) {
+                   const struct open_flags *op, struct file *file) {
 
-	struct dentry *child;
-	struct dentry *parent;
-	struct path path;
-	
-	int error = path_lookupat(nd, flags | LOOKUP_DIRECTORY, &path);
-	if (unlikely(error))
-		return error;
-	
-	error = mnt_want_write(path.mnt);
-	if (unlikely(error))
-		goto out;
-	
-	parent = path.dentry->parent;
-	
-	if (unlikely(!parent)) {
-	  error = -ENOENT;
-	  goto out2;
-	}
-	
-	child = fas_tmpfile(parent, op->mode, op->open_flag);
-	error = PTR_ERR(child);
-	if (IS_ERR(child))
-		goto out2;
-	
-	dput(parent);
-	path.dentry = child;
-	audit_inode(nd->name, child, 0);
-	
-	file->f_path.mnt = path.mnt;
-	error = finish_open(file, child, NULL);
+  struct dentry *child;
+  struct dentry *parent;
+  struct path path;
+  
+  int error = path_lookupat(nd, flags | LOOKUP_DIRECTORY, &path);
+  if (unlikely(error))
+    return error;
+  
+  error = mnt_want_write(path.mnt);
+  if (unlikely(error))
+    goto out;
+  
+  parent = path.dentry->parent;
+  
+  if (unlikely(!parent)) {
+    error = -ENOENT;
+    goto out2;
+  }
+  
+  child = fas_tmpfile(parent, op->mode, op->open_flag);
+  error = PTR_ERR(child);
+  if (IS_ERR(child))
+    goto out2;
+  
+  dput(parent);
+  path.dentry = child;
+  audit_inode(nd->name, child, 0);
+  
+  file->f_path.mnt = path.mnt;
+  error = finish_open(file, child, NULL);
 
 out2:
-	mnt_drop_write(path.mnt);
+  mnt_drop_write(path.mnt);
 out:
-	path_put(&path);
-	return error;
+  path_put(&path);
+  return error;
 }
 
 
@@ -87,23 +87,23 @@ struct file* do_fas_tmp_filp_open(struct filename* pathname,
                                   const struct open_flags *op) {
 
   struct nameidata nd;
-	int flags = op->lookup_flags;
-	struct file *filp;
-	int error;
+  int flags = op->lookup_flags;
+  struct file *filp;
+  int error;
 
-	set_nameidata(&nd, dfd, pathname);
-	
-	filp = alloc_empty_file(op->open_flag, current_cred());
-	if (!IS_ERR(filp)) {
-	  
-	  error = do_fas_tmpfile(&nd, flags, op);
-	  if (error)
-	    filp = ERR_PTR(error);
-	}
-	
-	// TODO handle EOPENSTALE
-	restore_nameidata();
-	return filp;
+  set_nameidata(&nd, dfd, pathname);
+  
+  filp = alloc_empty_file(op->open_flag, current_cred());
+  if (!IS_ERR(filp)) {
+    
+    error = do_fas_tmpfile(&nd, flags, op);
+    if (error)
+      filp = ERR_PTR(error);
+  }
+  
+  // TODO handle EOPENSTALE
+  restore_nameidata();
+  return filp;
 }
 
 
@@ -118,7 +118,7 @@ int fas_ioctl_open(char* filename, int flags, mode_t mode) {
   
   int fd = build_open_flags(flags, mode, &op);
   if (fd)
-		return fd;
+    return fd;
   
   tmp = getname(filename);
   if (IS_ERR(tmp))
