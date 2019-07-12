@@ -1,8 +1,6 @@
 #ifndef __FAS_H__
 #define __FAS_H__
 
-#include <linux/ioctl.h>
-
 #define FAS_FILE_NAME "/dev/fas"
 
 #define FAS_IOCTL_MAGIC 52634
