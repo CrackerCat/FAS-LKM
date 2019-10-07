@@ -8,6 +8,7 @@ int fas_major_num;
 struct class *fas_class; 
 
 do_sys_open_t fas_do_sys_open;
+EXPORT_SYMBOL(fas_do_sys_open);
 
 static struct file_operations dev_fops =
 {
@@ -15,7 +16,7 @@ static struct file_operations dev_fops =
     .unlocked_ioctl = fas_dev_ioctl,
 };
 
-static int fas_lookup_needed_symbols() {
+static int fas_lookup_needed_symbols(void) {
 
 	struct kprobe kp = {0};
 	
@@ -41,8 +42,6 @@ static int __init fas_init(void) {
     FAS_FATAL("Failed to lookup needed symbols");
     return r;
 	}
-
-  fas_do_sys_open = (orig_getdents_t)__sys_call_table[__NR_getdents];
 
   fas_major_num = register_chrdev(0, DEVICE_NAME, &dev_fops);
   if (fas_major_num < 0) {

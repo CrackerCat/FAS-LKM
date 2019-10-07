@@ -2,6 +2,8 @@
 #include "fas.h"
 
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 static int fas_dev_fd;
 

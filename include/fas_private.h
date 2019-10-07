@@ -17,8 +17,15 @@
 #include <linux/kern_levels.h>
 #include <linux/types.h>
 #include <linux/ioctl.h>
+#include <linux/file.h>
+#include <asm/segment.h>
+#include <linux/buffer_head.h>
+#include <linux/kprobes.h>
 
 #include "fas.h"
+
+#define DEVICE_NAME "fas"
+#define CLASS_NAME "fas"
 
 /* Output macros */
 
@@ -38,8 +45,11 @@
 
 /* Definitions */
 
-#define DEVICE_NAME "fas"
-#define CLASS_NAME "fas"
+struct fas_filp_info {
+
+  struct file *filp;
+  unsigned char is_w;
+};
 
 typedef long (*do_sys_open_t)(int, const char __user *, int, umode_t);
 

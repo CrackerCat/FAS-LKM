@@ -1,7 +1,12 @@
+NAME = test_open
+OBJECTS = test_open.o
+
 HDR_PATH ?= ../include/
+LIB_PATH ?= ../libfas/
 
 CFLAGS ?= -g -O0
 CFLAGS += -I$(HDR_PATH) -Wall -D_FORTIFY_SOURCE=2 -Wno-pointer-sign
+LDFLAGS += -L$(LIB_PATH) -lfas
 
 COMMON_HDR = $(HDR_PATH)fas.h
 
