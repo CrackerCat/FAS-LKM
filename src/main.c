@@ -36,7 +36,12 @@ static int __init fas_init(void) {
 
 	int r;
 	
+	FAS_SAY("Loaded fas module");
+	
 	r = fas_lookup_needed_symbols();
+	
+	FAS_SAY("Symbols lookup completed");
+	
 	if (r < 0) {
 
     FAS_FATAL("Failed to lookup needed symbols");
@@ -49,7 +54,7 @@ static int __init fas_init(void) {
       FAS_FATAL("Failed to register a major number");
       return fas_major_num;
   }
-
+  
   /* TODO Code for the sysfs device
   
   fas_class = class_create(THIS_MODULE, CLASS_NAME);

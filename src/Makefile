@@ -1,9 +1,12 @@
-obj-m += fas.o
-fas-objs := main.o ioctl.o open.o
-EXTRA_CFLAGS = -I$(src)/../include
+BR2_EXTERNAL_KERNEL_MODULE_PATH ?= $(PWD)
+
+obj-m += $(addsuffix .o, $(notdir $(basename $(wildcard $(BR2_EXTERNAL_KERNEL_MODULE_PATH)/*.c))))
+ccflags-y := -DDEBUG -g -I$(src)/../include
+
+LINUX_DIR ?= /lib/modules/$(shell uname -r)/build
 
 all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+	make -C '$(LINUX_DIR)' 'M=$(PWD)' modules
 
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+	make -C '$(LINUX_DIR)' 'M=$(PWD)' clean
