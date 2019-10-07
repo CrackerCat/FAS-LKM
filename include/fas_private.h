@@ -41,6 +41,10 @@
 #define DEVICE_NAME "fas"
 #define CLASS_NAME "fas"
 
+typedef long (*do_sys_open_t)(int, const char __user *, int, umode_t);
+
+extern do_sys_open_t fas_do_sys_open;
+
 /* Cross object variables */
 
 extern int fas_major_num; /* Dinamically allocated device number */

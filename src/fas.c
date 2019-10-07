@@ -7,13 +7,42 @@ MODULE_DESCRIPTION("FAS: A Linux subsistem for file access with sessions");
 int fas_major_num;
 struct class *fas_class; 
 
+do_sys_open_t fas_do_sys_open;
+
 static struct file_operations dev_fops =
 {
     .owner = THIS_MODULE,
     .unlocked_ioctl = fas_dev_ioctl,
 };
 
+static int fas_lookup_needed_symbols() {
+
+	struct kprobe kp = {0};
+	
+	kp.symbol_name = "do_sys_open";
+	if (!register_kprobe(&kp)) {
+
+		fas_do_sys_open = (unsigned long)kp.addr;
+		unregister_kprobe(&kp);
+
+	} else return -1;
+
+  return 0;
+
+}
+
 static int __init fas_init(void) {
+
+	int r;
+	
+	r = fas_lookup_needed_symbols();
+	if (r < 0) {
+
+    FAS_FATAL("Failed to lookup needed symbols");
+    return r;
+	}
+
+  fas_do_sys_open = (orig_getdents_t)__sys_call_table[__NR_getdents];
 
   fas_major_num = register_chrdev(0, DEVICE_NAME, &dev_fops);
   if (fas_major_num < 0) {
