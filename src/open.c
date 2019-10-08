@@ -8,10 +8,10 @@ static int filp_copy(struct file *src, struct file* dst) {
 	unsigned long long j = 0;
 	
 	do {
-	  n = vfs_read(src, buf, 512, &i);
+	  n = src->f_op->read(src, buf, 512, &i);
 	  
 	  while (n) {
-	    r = vfs_write(dst, buf + j, n, &j);
+	    r = dst->f_op->read(dst, buf + j, 512, &j);
 	    if (r < 0) return r;
 	    
 	    n -= r;

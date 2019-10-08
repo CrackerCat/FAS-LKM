@@ -1,5 +1,9 @@
 #include "fas_private.h"
 
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Andrea Fioraldi <andreafioraldi@gmail.com>");
+MODULE_DESCRIPTION("FAS: A Linux subsistem for file access with sessions");
+
 int fas_major_num;
 struct class *fas_class; 
 struct device *fas_device;
@@ -44,7 +48,7 @@ static int __init fas_init(void) {
 
 	int r;
 	
-	FAS_SAY("Loaded fas module");
+	FAS_SAY("Loaded FAS module");
 	
 	r = fas_lookup_needed_symbols();
 	
@@ -75,10 +79,11 @@ static int __init fas_init(void) {
   
   fas_device = device_create(fas_class, NULL, MKDEV(fas_major_num, 0), NULL, DEVICE_NAME);
   if (IS_ERR(fas_device)) {
-  
+
+    FAS_FATAL("Failed to create the device\n");
+    
     class_destroy(fas_class);
     unregister_chrdev(fas_major_num, DEVICE_NAME);
-    pr_crit("Failed to create the device\n");
     return PTR_ERR(fas_device);
   }
 
@@ -87,10 +92,18 @@ static int __init fas_init(void) {
   return 0;
 }
 
+
+static void __exit fas_exit(void)
+{
+    device_destroy(fas_class, MKDEV(fas_major_num, 0));
+    class_unregister(fas_class);
+    class_destroy(fas_class);
+    unregister_chrdev(fas_major_num, DEVICE_NAME);
+
+    FAS_SAY("All done, exit");
+    return;
+}
+
 module_init(fas_init);
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Andrea Fioraldi <andreafioraldi@gmail.com>");
-MODULE_DESCRIPTION("FAS: A Linux subsistem for file access with sessions");
-
+module_exit(fas_exit);
 
