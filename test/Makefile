@@ -1,4 +1,4 @@
-NAME = test_open
+NAME = test_open.bin
 OBJECTS = test_open.o
 
 HDR_PATH ?= ../include/

@@ -1,13 +1,15 @@
 #ifndef __FAS_H__
 #define __FAS_H__
 
+#include <linux/limits.h>
+
 #define FAS_FILE_NAME "/dev/fas"
 
 #define FAS_IOCTL_MAGIC 52634
 
 struct fas_open_args {
 
-  char* pathname;
+  char pathname[PATH_MAX];
   int flags;
   mode_t mode;
 };

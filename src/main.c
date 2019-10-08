@@ -12,12 +12,14 @@ do_sys_open_t fas_do_sys_open;
 EXPORT_SYMBOL(fas_do_sys_open);
 
 static int fas_dev_open(struct inode *inodep, struct file *filep) {
+
+  FAS_SAY("Just opened!");
   return 0;
 }
 
 static char *fas_devnode(struct device *dev, umode_t *mode) {
-    if (mode)
-        *mode = 0644;
+
+    if (mode) *mode = 0644;
     return NULL; 
 }
 
