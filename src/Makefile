@@ -1,12 +1,25 @@
-BR2_EXTERNAL_KERNEL_MODULE_PATH ?= $(PWD)
+ifndef M
+override M = $(PWD)
+endif
 
-obj-m += $(addsuffix .o, $(notdir $(basename $(wildcard $(BR2_EXTERNAL_KERNEL_MODULE_PATH)/*.c))))
-ccflags-y := -DDEBUG -g -I$(src)/../include
+obj-m += fas.o
+fas-objs := main.o ioctl.o open.o
+
+ccflags-y := \
+  -DDEBUG \
+  -ggdb3 \
+  -std=gnu99 \
+  -Wframe-larger-than=1000000000 \
+  -I$(M)/../include \
+  -Wno-declaration-after-statement \
+  $(CCFLAGS)
 
 LINUX_DIR ?= /lib/modules/$(shell uname -r)/build
 
+.PHONY: all
+
 all:
-	make -C '$(LINUX_DIR)' 'M=$(PWD)' modules
+	$(MAKE) -C '$(LINUX_DIR)' M='$(M)' modules
 
 clean:
-	make -C '$(LINUX_DIR)' 'M=$(PWD)' clean
+	$(MAKE) -C '$(LINUX_DIR)' M='$(M)' clean

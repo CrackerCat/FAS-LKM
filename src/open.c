@@ -42,7 +42,7 @@ int fas_ioctl_open(char* filename, int flags, mode_t mode) {
   else a_flags &= O_RDONLY;
 
   oldfs = get_fs();
-  set_fs(get_ds()); /* Set fs related to kernel space */
+  set_fs(KERNEL_DS); /* Set fs related to kernel space */
   a_filp = filp_open(filename, a_flags, mode);
   set_fs(oldfs);
   
