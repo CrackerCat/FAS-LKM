@@ -89,10 +89,6 @@ struct fas_filp_info {
 
 };
 
-typedef long (*do_sys_open_t)(int, const char __user *, int, umode_t);
-
-extern do_sys_open_t fas_do_sys_open;
-
 extern struct radix_tree_root fas_files_tree;
 
 /* Cross object variables */

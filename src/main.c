@@ -8,9 +8,6 @@ int            fas_major_num;
 struct class * fas_class;
 struct device *fas_device;
 
-do_sys_open_t fas_do_sys_open;
-EXPORT_SYMBOL(fas_do_sys_open);
-
 struct radix_tree_root fas_files_tree;
 EXPORT_SYMBOL(fas_files_tree);
 
@@ -36,42 +33,11 @@ static struct file_operations dev_fops = {
 
 };
 
-static int fas_lookup_needed_symbols(void) {
-
-  struct kprobe kp = {0};
-
-  kp.symbol_name = "do_sys_open";
-  if (register_kprobe(&kp) < 0) {
-
-    fas_do_sys_open = (void *)kp.addr;
-    unregister_kprobe(&kp);
-
-  } else
-
-    return -1;
-
-  return 0;
-
-}
-
 static int __init fas_init(void) {
-
-  int r;
 
   FAS_SAY("Loaded FAS module (v" FAS_VERSION ")");
 
   INIT_RADIX_TREE(&fas_files_tree, GFP_KERNEL);
-
-  r = fas_lookup_needed_symbols();
-
-  FAS_SAY("Symbols lookup completed");
-
-  if (r < 0) {
-
-    FAS_FATAL("Failed to lookup needed symbols");
-    return r;
-
-  }
 
   fas_major_num = register_chrdev(0, DEVICE_NAME, &dev_fops);
   if (fas_major_num < 0) {
