@@ -1,5 +1,7 @@
 #include "fas_private.h"
 
+
+
 int fas_filp_copy(struct file *src, struct file* dst) {
 
   long r, n;
@@ -82,7 +84,14 @@ int fas_ioctl_open(char* filename, int flags, mode_t mode) {
   fd_install(fd, b_filp);
   
   r = fas_filp_copy(a_filp, b_filp);
-  if (r < 0) return r;
+  if (r < 0) {
+    filp_close(a_filp, NULL);
+    filp_close(b_filp, NULL);
+    return r;
+  }
+  
+  b_filp->f_op->flush = &fas_file_flush;
+  b_filp->f_op->release = &fas_file_release;
 
   return fd;
   

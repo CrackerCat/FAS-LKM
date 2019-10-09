@@ -21,6 +21,7 @@
 #include <asm/segment.h>
 #include <linux/buffer_head.h>
 #include <linux/kprobes.h>
+#include <linux/radix-tree.h>
 
 #include "fas.h"
 
@@ -87,8 +88,10 @@ extern do_sys_open_t fas_do_sys_open;
 extern int fas_major_num; /* Dinamically allocated device number */
 extern struct class *fas_class; /* Class struct for FAS */
 
-long fas_dev_ioctl(struct file *f, unsigned int cmd, unsigned long arg);
+long fas_dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 
 int fas_ioctl_open(char* filename, int flags, mode_t mode);
+int fas_file_release(struct inode *inodep, struct file *filep);
+int fas_file_flush(struct file * filep);
 
 #endif
