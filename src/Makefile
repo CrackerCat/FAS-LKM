@@ -3,7 +3,7 @@ override M = $(PWD)
 endif
 
 obj-m += fas.o
-fas-objs := main.o ioctl.o open.o utils.o release.o flush.o
+fas-objs := main.o ioctl.o open.o utils.o release.o flush.o initial_path.o
 
 ccflags-y := \
   -DDEBUG \

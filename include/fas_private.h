@@ -91,6 +91,8 @@ struct fas_filp_info {
 
 extern struct radix_tree_root fas_files_tree;
 
+extern char fas_initial_path[PATH_MAX];
+
 /* Cross object variables */
 
 extern int           fas_major_num;  /* Dinamically allocated device number */
@@ -104,8 +106,10 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode);
 int fas_file_release(struct inode *inodep, struct file *filep);
 int fas_file_flush(struct file *filep, fl_owner_t id);
 
-ssize_t fas_initial_path_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
-ssize_t fas_intial_path_store(struct  kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count);
+ssize_t fas_initial_path_show(struct kobject *kobj, struct kobj_attribute *attr,
+                              char *buf);
+ssize_t fas_intial_path_store(struct kobject *kobj, struct kobj_attribute *attr,
+                              const char *buf, size_t count);
 
 #endif
 

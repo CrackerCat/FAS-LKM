@@ -2,11 +2,11 @@
 .PHONY: all
 
 all:
-	$(MAKE) -C src
+	cd src && $(MAKE)
 	$(MAKE) -C libfas
 
 clean:
-	$(MAKE) -C src clean
+	cd src && $(MAKE) clean
 	$(MAKE) -C libfas clean
 
 code-format:

@@ -13,15 +13,21 @@ EXPORT_SYMBOL(fas_files_tree);
 
 struct kobject *fas_kobj;
 
-static struct kobj_attribute fas_kobj_attribute = __ATTR(initial_path, S_IRUGO | S_IWUSR, fas_initial_path_show, fas_intial_path_store);
+static struct kobj_attribute fas_kobj_attribute =
+    __ATTR(initial_path, S_IRUGO | S_IWUSR, fas_initial_path_show,
+           fas_intial_path_store);
 
 static struct attribute *fas_attrs[] = {
-	&fas_kobj_attribute.attr,
-	NULL,
+
+    &fas_kobj_attribute.attr,
+    NULL,
+
 };
 
 static struct attribute_group fas_attr_group = {
-	.attrs = fas_attrs,
+
+    .attrs = fas_attrs,
+
 };
 
 static int fas_dev_open(struct inode *inodep, struct file *filep) {
@@ -51,17 +57,18 @@ static int __init fas_init(void) {
   FAS_SAY("Loaded FAS module (v" FAS_VERSION ")");
 
   fas_kobj = kobject_create_and_add("fas", kernel_kobj);
-	if (!fas_kobj)
-		return -ENOMEM;
+  if (!fas_kobj) return -ENOMEM;
 
-	int r = sysfs_create_group(fas_kobj, &fas_attr_group);
-	if (r) {
-	  FAS_FATAL("Failed to install in sysfs");
-		kobject_put(fas_kobj);
-		return r;
-	}
-	
-	FAS_SAY("Installed FAS in sysfs");
+  int r = sysfs_create_group(fas_kobj, &fas_attr_group);
+  if (r) {
+
+    FAS_FATAL("Failed to install in sysfs");
+    kobject_put(fas_kobj);
+    return r;
+
+  }
+
+  FAS_SAY("Installed FAS in sysfs");
 
   INIT_RADIX_TREE(&fas_files_tree, GFP_KERNEL);
 

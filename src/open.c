@@ -35,7 +35,8 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   oldfs = get_fs();
   set_fs(KERNEL_DS);                      /* Set fs related to kernel space */
-  struct file *b_filp = filp_open("/tmp", O_TMPFILE | O_EXCL | O_RDWR, 0644);
+  struct file *b_filp =
+      filp_open(fas_initial_path, O_TMPFILE | O_EXCL | O_RDWR, 0644);
   set_fs(oldfs);
 
   FAS_DEBUG("fas_ioctl_open: b_filp = %p", b_filp);
