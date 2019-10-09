@@ -104,5 +104,8 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode);
 int fas_file_release(struct inode *inodep, struct file *filep);
 int fas_file_flush(struct file *filep, fl_owner_t id);
 
+ssize_t fas_initial_path_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+ssize_t fas_intial_path_store(struct  kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count);
+
 #endif
 
