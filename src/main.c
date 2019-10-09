@@ -11,6 +11,10 @@ struct device *fas_device;
 do_sys_open_t fas_do_sys_open;
 EXPORT_SYMBOL(fas_do_sys_open);
 
+struct radix_tree_root fas_files_tree;
+EXPORT_SYMBOL(fas_files_tree);
+
+
 static int fas_dev_open(struct inode *inodep, struct file *filep) {
 
   FAS_SAY("Just opened!");
@@ -51,6 +55,8 @@ static int __init fas_init(void) {
 	int r;
 	
 	FAS_SAY("Loaded FAS module (v" FAS_VERSION ")");
+	
+	INIT_RADIX_TREE(&fas_files_tree, GFP_KERNEL);
 	
 	r = fas_lookup_needed_symbols();
 	

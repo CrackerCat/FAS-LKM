@@ -1,6 +1,6 @@
 #include "fas_private.h"
 
-long fas_dev_ioctl(struct file *f, unsigned int cmd, unsigned long arg) {
+long fas_dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) {
 
   switch (cmd) {
     case FAS_IOCTL_NOP:

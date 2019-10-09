@@ -16,8 +16,11 @@ int main() {
   printf("fd: %d\n", fd);
   char buf[32] = {0};
   read(fd, buf, 5);
-
+  
   printf("buf: %s\n", buf);
+  
+  write(fd, " <3\n", 4);
+  
   return 0;
 
 }

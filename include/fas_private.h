@@ -17,10 +17,12 @@
 #include <linux/kern_levels.h>
 #include <linux/types.h>
 #include <linux/ioctl.h>
+#include <linux/slab.h>
 #include <linux/file.h>
 #include <asm/segment.h>
 #include <linux/buffer_head.h>
 #include <linux/kprobes.h>
+#include <linux/radix-tree.h>
 
 #include "fas.h"
 
@@ -75,6 +77,7 @@
 struct fas_filp_info {
 
   struct file *filp;
+  struct file_operations* orig_f_op;
   unsigned char is_w;
 };
 
@@ -82,13 +85,19 @@ typedef long (*do_sys_open_t)(int, const char __user *, int, umode_t);
 
 extern do_sys_open_t fas_do_sys_open;
 
+extern struct radix_tree_root fas_files_tree;
+
 /* Cross object variables */
 
 extern int fas_major_num; /* Dinamically allocated device number */
 extern struct class *fas_class; /* Class struct for FAS */
 
-long fas_dev_ioctl(struct file *f, unsigned int cmd, unsigned long arg);
+int fas_filp_copy(struct file *src, struct file* dst);
+
+long fas_dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 
 int fas_ioctl_open(char* filename, int flags, mode_t mode);
+int fas_file_release(struct inode *inodep, struct file *filep);
+int fas_file_flush(struct file * filep, fl_owner_t id);
 
 #endif

@@ -1,35 +1,8 @@
 #include "fas_private.h"
 
-int fas_filp_copy(struct file *src, struct file* dst) {
 
-  long r, n;
-  char buf[512];
-	unsigned long long i = 0;
-	unsigned long long j = 0;
-	
-	while(1) {
 
-	  n = kernel_read(src, buf, 512, &i);
 
-    if (n <= 0) break;
-
-    FAS_DEBUG("fas_filp_copy: readed %ld bytes:", n);
-    FAS_DEBUG_HEXDUMP(buf, n);
-
-	  long k = n;
-	  while (k) {
-	    r = kernel_write(dst, buf + j, k, &j);
-
-	    if (r < 0) return r;
-	    
-	    k -= r;
-	  }
-	  
-	}
-	
-	if (n < 0) return n;
-	return 0;
-}
 
 int fas_ioctl_open(char* filename, int flags, mode_t mode) {
 
@@ -82,7 +55,35 @@ int fas_ioctl_open(char* filename, int flags, mode_t mode) {
   fd_install(fd, b_filp);
   
   r = fas_filp_copy(a_filp, b_filp);
-  if (r < 0) return r;
+  if (r < 0) {
+    filp_close(a_filp, NULL);
+    filp_close(b_filp, NULL);
+    return r;
+  }
+  
+  struct fas_filp_info* finfo = kmalloc(sizeof(struct fas_filp_info), GFP_KERNEL);
+  
+  finfo->filp = a_filp;
+  finfo->orig_f_op = (struct file_operations *)b_filp->f_op;
+  finfo->is_w = (is_w != 0);
+  
+  FAS_DEBUG("fas_ioctl_open: generated finfo = %p", finfo);
+  FAS_DEBUG("fas_ioctl_open:   finfo->filp = %p", finfo->filp);
+  FAS_DEBUG("fas_ioctl_open:   finfo->orig_f_op = %p", finfo->orig_f_op);
+  FAS_DEBUG("fas_ioctl_open:   finfo->is_w = %d", finfo->is_w);
+  
+  radix_tree_insert(&fas_files_tree, (unsigned long)b_filp, finfo);
+  
+  struct file_operations *new_fops = kmalloc(sizeof(struct file_operations), GFP_KERNEL);
+  
+  FAS_DEBUG("fas_ioctl_open: new_fops = %p", new_fops);
+  
+  memcpy(new_fops, b_filp->f_op, sizeof(struct file_operations));
+  
+  new_fops->release = &fas_file_release;
+  new_fops->flush = &fas_file_flush;
+  
+  b_filp->f_op = new_fops;
 
   return fd;
   
