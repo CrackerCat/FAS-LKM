@@ -29,6 +29,19 @@
 
 /* Output macros */
 
+#define FAS_HEXDUMP(type, prefix, ptr, size) \
+  do { \
+    int i; \
+    printk(type prefix "  [0] "); \
+    for(i = 0; i < (size); ++i) { \
+\
+        printk(KERN_CONT "%02hhX ", ((char*)(ptr))[i]); \
+        if ((i+1) % 16 == 0 && i < (size)-1) \
+            printk(KERN_CONT "\n" prefix "  [%4d] ", i+1); \
+    } \
+    printk(KERN_CONT "\n"); \
+  } while(0)
+
 #define FAS_FATAL(x...) \
   do { \
     pr_crit("[FAS] FATAL in %s(), %s:%u\n", __FUNCTION__, \
@@ -42,6 +55,20 @@
 
 #define FAS_SAY(x...) \
   pr_info("[FAS] SAY: " x)
+
+#ifdef DEBUG
+
+#define FAS_DEBUG(x...) \
+  pr_alert("[FAS] DEBUG: " x)
+#define FAS_DEBUG_HEXDUMP(ptr, size) \
+  FAS_HEXDUMP(KERN_ALERT, "[FAS] DEBUG: ", ptr, size)
+
+#else
+
+#define FAS_DEBUG(x...) do {} while(0)
+#define FAS_DEBUG_HEXDUMP(x...) do {} while(0)
+
+#endif
 
 /* Definitions */
 
