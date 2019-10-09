@@ -64,17 +64,20 @@ int fas_ioctl_open(char* filename, int flags, mode_t mode) {
   struct fas_filp_info* finfo = kmalloc(sizeof(struct fas_filp_info), GFP_KERNEL);
   
   finfo->filp = a_filp;
-  finfo->orig_f_op = b_filp->f_op;
+  finfo->orig_f_op = (struct file_operations *)b_filp->f_op;
   finfo->is_w = (is_w != 0);
   
-  FAS_DEBUG("fas_file_flush: generated finfo = %p", finfo);
-  FAS_DEBUG("fas_file_flush:   finfo->filp = %p", finfo->filp);
-  FAS_DEBUG("fas_file_flush:   finfo->orig_f_op = %p", finfo->orig_f_op);
-  FAS_DEBUG("fas_file_flush:   finfo->is_w = %d", finfo->is_w);
+  FAS_DEBUG("fas_ioctl_open: generated finfo = %p", finfo);
+  FAS_DEBUG("fas_ioctl_open:   finfo->filp = %p", finfo->filp);
+  FAS_DEBUG("fas_ioctl_open:   finfo->orig_f_op = %p", finfo->orig_f_op);
+  FAS_DEBUG("fas_ioctl_open:   finfo->is_w = %d", finfo->is_w);
   
   radix_tree_insert(&fas_files_tree, (unsigned long)b_filp, finfo);
   
   struct file_operations *new_fops = kmalloc(sizeof(struct file_operations), GFP_KERNEL);
+  
+  FAS_DEBUG("fas_ioctl_open: new_fops = %p", new_fops);
+  
   memcpy(new_fops, b_filp->f_op, sizeof(struct file_operations));
   
   new_fops->release = &fas_file_release;
