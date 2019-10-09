@@ -3,6 +3,8 @@
 
 #include <linux/limits.h>
 
+#define FAS_VERSION "0.1"
+
 #define FAS_FILE_NAME "/dev/fas"
 
 #define FAS_IOCTL_MAGIC 52634

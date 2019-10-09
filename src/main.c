@@ -50,7 +50,7 @@ static int __init fas_init(void) {
 
 	int r;
 	
-	FAS_SAY("Loaded FAS module");
+	FAS_SAY("Loaded FAS module (v" FAS_VERSION ")");
 	
 	r = fas_lookup_needed_symbols();
 	
