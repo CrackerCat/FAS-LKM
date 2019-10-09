@@ -11,12 +11,14 @@
 
 struct fas_open_args {
 
-  char pathname[PATH_MAX];
-  int flags;
+  char   pathname[PATH_MAX];
+  int    flags;
   mode_t mode;
+
 };
 
 #define FAS_IOCTL_NOP _IO(FAS_IOCTL_MAGIC, 1)
 #define FAS_IOCTL_OPEN _IOR(FAS_IOCTL_MAGIC, 2, struct fas_open_args*)
 
 #endif
+
