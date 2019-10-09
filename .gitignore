@@ -1,3 +1,6 @@
+qemu/
+test/test_*.bin
+
 # Normal rules
 #
 .*
