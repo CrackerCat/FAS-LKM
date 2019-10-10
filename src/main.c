@@ -112,6 +112,8 @@ static int __init fas_init(void) {
 
 static void __exit fas_exit(void) {
 
+  kobject_put(fas_kobj);
+
   device_destroy(fas_class, MKDEV(fas_major_num, 0));
   class_unregister(fas_class);
   class_destroy(fas_class);
