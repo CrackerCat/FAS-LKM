@@ -9,18 +9,20 @@ int main() {
   int fd = creat("./pippo.txt", O_WRONLY);
   write(fd, "pippo", 5);
   close(fd);
-  
+
   fas_init();
-  
+
   fd = fas_open("./pippo.txt", O_RDWR, 0);
   printf("fd: %d\n", fd);
   char buf[32] = {0};
   read(fd, buf, 5);
-  
+
   printf("buf: %s\n", buf);
-  
-  write(fd, " <3\n", 4);
-  
+
+  int r = write(fd, " <3\n", 4);
+  printf("r: %d\n", r);
+
   return 0;
 
 }
+

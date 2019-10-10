@@ -12,6 +12,7 @@ int fas_init() {
 
   fas_dev_fd = open(FAS_FILE_NAME, 0);
   return fas_dev_fd;
+
 }
 
 int fas_open(char* pathname, int flags, mode_t mode) {
@@ -20,6 +21,8 @@ int fas_open(char* pathname, int flags, mode_t mode) {
   args.flags = flags;
   args.mode = mode;
   strncpy(args.pathname, pathname, PATH_MAX);
-  
+
   return ioctl(fas_dev_fd, FAS_IOCTL_OPEN, &args);
+
 }
+

@@ -3,7 +3,7 @@
 
 #include <linux/limits.h>
 
-#define FAS_VERSION "0.2"
+#define FAS_VERSION "0.3"
 
 #define FAS_FILE_NAME "/dev/fas"
 
@@ -11,12 +11,14 @@
 
 struct fas_open_args {
 
-  char pathname[PATH_MAX];
-  int flags;
+  char   pathname[PATH_MAX];
+  int    flags;
   mode_t mode;
+
 };
 
 #define FAS_IOCTL_NOP _IO(FAS_IOCTL_MAGIC, 1)
 #define FAS_IOCTL_OPEN _IOR(FAS_IOCTL_MAGIC, 2, struct fas_open_args*)
 
 #endif
+
