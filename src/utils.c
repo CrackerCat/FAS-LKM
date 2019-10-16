@@ -42,7 +42,7 @@ int fas_is_subpath(char* super_pathname, char* sub_pathname, int follow_links) {
   int follow_param = 0;
   if (follow_links) follow_param = LOOKUP_FOLLOW;
 
-  if (!super_pathname || kern_path(super_pathname, 0, &path1))
+  if (!super_pathname || kern_path(super_pathname, LOOKUP_FOLLOW, &path1))
     goto end_is_subpath;
 
   if (!sub_pathname || kern_path(sub_pathname, follow_param, &path2))

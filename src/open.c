@@ -9,6 +9,8 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   /* Session temporary files are not a thing. For O_PATH use regular open() */
   if (flags & (O_TMPFILE | O_PATH)) return -EINVAL;
 
+  if (!fas_is_subpath(fas_initial_path, filename, 1)) return -EINVAL;
+
   struct file *a_filp = NULL;
   mm_segment_t oldfs;
 
