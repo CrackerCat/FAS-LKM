@@ -81,3 +81,20 @@ int fas_send_signal(int sig_num) {
 
 }
 
+char* fas_get_process_fullname(struct task_struct* t, char* buf, size_t size) {
+
+  char*             name = t->comm;
+  struct mm_struct* mm = t->mm;
+
+  if (mm && buf) {
+
+    down_read(&mm->mmap_sem);
+    if (mm->exe_file) name = d_path(&mm->exe_file->f_path, buf, size);
+    up_read(&mm->mmap_sem);
+
+  }
+
+  return name;
+
+}
+
