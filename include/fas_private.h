@@ -83,7 +83,8 @@
 
 struct fas_filp_info {
 
-  struct file *           filp;
+  char *                  pathname;
+  int                     flags;
   struct file_operations *orig_f_op;
   unsigned char           is_w;
 
@@ -91,7 +92,9 @@ struct fas_filp_info {
 
 extern struct radix_tree_root fas_files_tree;
 
-extern char fas_initial_path[PATH_MAX +1];
+extern char fas_initial_path[PATH_MAX + 1];
+
+extern long fas_opened_sessions_num;
 
 /* Cross object variables */
 
@@ -99,6 +102,8 @@ extern int           fas_major_num;  /* Dinamically allocated device number */
 extern struct class *fas_class;                     /* Class struct for FAS */
 
 int fas_filp_copy(struct file *src, struct file *dst);
+int fas_is_subpath(char *super_pathname, char *sub_pathname, int follow_links);
+int fas_send_signal(int sig_num);
 
 long fas_dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 

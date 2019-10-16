@@ -1,7 +1,7 @@
 #include "fas_private.h"
 
 /* /sys/kernel/fas/initial_path */
-char fas_initial_path[PATH_MAX +1] = {'/', 't', 'm', 'p', 0};
+char fas_initial_path[PATH_MAX + 1] = {'/', 't', 'm', 'p', 0};
 EXPORT_SYMBOL(fas_initial_path);
 
 ssize_t fas_initial_path_show(struct kobject *kobj, struct kobj_attribute *attr,
@@ -20,13 +20,13 @@ ssize_t fas_intial_path_store(struct kobject *kobj, struct kobj_attribute *attr,
   if (count > PATH_MAX) size = PATH_MAX;
 
   strncpy(fas_initial_path, buf, size);
-  
+
   size = strlen(fas_initial_path);
-  while (size && fas_initial_path[size -1] == '\n')
+  while (size && fas_initial_path[size - 1] == '\n')
     --size;
-  
+
   fas_initial_path[size] = 0;
-  
+
   return count;
 
 }
