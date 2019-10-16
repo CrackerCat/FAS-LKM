@@ -74,7 +74,7 @@ struct fas_htable {
 
 };
 
-static int fas_h_hash(char *key) {
+static int fas_key_hash(char *key) {
 
   size_t keylen = strlen(key);
 	unsigned long hashval = 0;
@@ -106,7 +106,7 @@ ssize_t fas_sessions_each_file_show(struct kobject *kobj, struct kobj_attribute 
     struct fas_filp_info *finfo = radix_tree_deref_slot(slot);
     if (finfo == NULL) continue;
     
-    int key = fas_h_hash(finfo->pathname);
+    int key = fas_key_hash(finfo->pathname);
     struct fas_files_h_struct* entry;
     int present = 0;
     
