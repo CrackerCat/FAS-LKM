@@ -3,7 +3,7 @@
 
 #include <linux/limits.h>
 
-#define FAS_VERSION "0.3"
+#define FAS_VERSION "0.4"
 
 #define FAS_FILE_NAME "/dev/fas"
 

@@ -34,3 +34,50 @@ int fas_filp_copy(struct file* src, struct file* dst) {
 
 }
 
+int fas_is_subpath(char* super_pathname, char* sub_pathname, int follow_links) {
+
+  struct path path1, path2;
+  int         r = 0;
+
+  int follow_param = 0;
+  if (follow_links) follow_param = LOOKUP_FOLLOW;
+
+  if (!super_pathname || kern_path(super_pathname, LOOKUP_FOLLOW, &path1))
+    goto end_is_subpath;
+
+  if (!sub_pathname || kern_path(sub_pathname, follow_param, &path2))
+    goto path1_cleanup;
+
+  struct dentry* p = NULL;
+  for (p = path2.dentry; !IS_ROOT(p); p = p->d_parent) {
+
+    if (p->d_parent == path1.dentry) {
+
+      r = 1;
+      break;
+
+    }
+
+  }
+
+  path_put(&path2);
+
+path1_cleanup:
+  path_put(&path1);
+
+end_is_subpath:
+  return r;
+
+}
+
+int fas_send_signal(int sig_num) {
+
+  struct kernel_siginfo info = {0};
+  info.si_signo = sig_num;
+  info.si_code = SI_QUEUE;
+  info.si_int = 0xdeadbeef;
+
+  return send_sig_info(sig_num, &info, current);
+
+}
+
