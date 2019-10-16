@@ -31,3 +31,14 @@ ssize_t fas_intial_path_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 }
 
+/* /sys/kernel/fas/sessions_num */
+long fas_opened_sessions_num;
+EXPORT_SYMBOL(fas_opened_sessions_num);
+
+ssize_t fas_sessions_num_show(struct kobject *kobj, struct kobj_attribute *attr,
+                              char *buf) {
+
+  size_t r = snprintf(buf, PAGE_SIZE, "%ld", fas_opened_sessions_num);
+  return r;
+
+}
