@@ -68,7 +68,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   finfo->pathname = kzalloc(PATH_MAX, GFP_KERNEL);
   char *out_pathname = d_path(&a_filp->f_path, finfo->pathname, PATH_MAX);
-  memmove(finfo->pathname, out_pathname, strlen(out_pathname) +1);
+  memmove(finfo->pathname, out_pathname, strlen(out_pathname) + 1);
 
   filp_close(a_filp, NULL);
 

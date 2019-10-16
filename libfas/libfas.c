@@ -1,10 +1,10 @@
 #include "libfas.h"
 #include "fas.h"
 
+#include <fcntl.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 
 static int fas_dev_fd;
 

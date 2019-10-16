@@ -39,10 +39,10 @@ ssize_t fas_sessions_num_show(struct kobject *kobj, struct kobj_attribute *attr,
                               char *buf) {
 
   return snprintf(buf, PAGE_SIZE, "%ld", fas_opened_sessions_num);
-  
+
   /* // Count sessions also using with refcounts
-  
-  struct radix_tree_iter iter;            
+
+  struct radix_tree_iter iter;
   void **slot;
   long counter = 0;
 
@@ -50,7 +50,7 @@ ssize_t fas_sessions_num_show(struct kobject *kobj, struct kobj_attribute *attr,
 
     struct fas_filp_info *finfo = radix_tree_deref_slot(slot);
     if (finfo == NULL) continue;
-    
+
     if (finfo->filp) counter += atomic_long_read(&finfo->filp->f_count);
 
   }
@@ -59,12 +59,11 @@ ssize_t fas_sessions_num_show(struct kobject *kobj, struct kobj_attribute *attr,
 
 }
 
-
 struct fas_files_h_struct {
 
-    char* key;
-    int counter;
-    struct hlist_node node;
+  char *            key;
+  int               counter;
+  struct hlist_node node;
 
 };
 
@@ -76,40 +75,41 @@ struct fas_htable {
 
 static int fas_key_hash(char *key) {
 
-  size_t keylen = strlen(key);
-	unsigned long hashval = 0;
-	int i = 0;
+  size_t        keylen = strlen(key);
+  unsigned long hashval = 0;
+  int           i = 0;
 
-	while (hashval < ULONG_MAX && i < keylen) {
+  while (hashval < ULONG_MAX && i < keylen) {
 
-		hashval = hashval << 8;
-		hashval += key[i];
-		i++;
+    hashval = hashval << 8;
+    hashval += key[i];
+    i++;
 
-	}
+  }
 
-	return hashval % (1 << 16);
+  return hashval % (1 << 16);
 
 }
 
-ssize_t fas_sessions_each_file_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf) {
+ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
+                                    struct kobj_attribute *attr, char *buf) {
 
   struct fas_htable *table = kzalloc(sizeof(struct fas_htable), GFP_KERNEL);
 
   hash_init(table->ht);
 
-  struct radix_tree_iter iter;            
-  void **slot;
+  struct radix_tree_iter iter;
+  void **                slot;
 
   radix_tree_for_each_slot(slot, &fas_files_tree, &iter, 0) {
 
     struct fas_filp_info *finfo = radix_tree_deref_slot(slot);
     if (finfo == NULL) continue;
-    
-    int key = fas_key_hash(finfo->pathname);
-    struct fas_files_h_struct* entry;
-    int present = 0;
-    
+
+    int                        key = fas_key_hash(finfo->pathname);
+    struct fas_files_h_struct *entry;
+    int                        present = 0;
+
     hash_for_each_possible(table->ht, entry, node, key) {
 
       if (strcmp(entry->key, finfo->pathname)) continue;
@@ -119,74 +119,107 @@ ssize_t fas_sessions_each_file_show(struct kobject *kobj, struct kobj_attribute 
       break;
 
     }
-    
+
     if (!present) {
-    
+
       entry = kzalloc(sizeof(struct fas_files_h_struct), GFP_KERNEL);
-      entry->key = finfo->pathname; //TODO copy for race
+      entry->key = finfo->pathname;  // TODO copy for race
       entry->counter = 1;
       hash_add(table->ht, &entry->node, key);
-    
+
     }
 
   }
 
-  int bkt, i = 0;
-  struct fas_files_h_struct* entry;
-  
-  hash_for_each (table->ht, bkt, entry, node) {
-  
+  int                        bkt, i = 0;
+  struct fas_files_h_struct *entry;
+
+  hash_for_each(table->ht, bkt, entry, node) {
+
     if (entry->key) {
-    
+
       size_t size = PAGE_SIZE - i;
       size_t r = snprintf(buf + i, size, "%s %d\n", entry->key, entry->counter);
-      
+
       if (r > size) {
+
         i = PAGE_SIZE;
         goto exit_list_files;
+
       }
-      
+
       i += r;
-      
+
     }
-  
+
   }
 
 exit_list_files:
 
   kfree(table);
-  
+
   return i;
 
 }
 
-/*
-static int current_init(void)
-{ 
-  char pathname[PATH_MAX];
+ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
+                           char *buf) {
 
-  struct task_struct *t = current;
-  struct fdtable *fdt = files_fdtable(t->files);
+  struct task_struct *t;
+  char                name_buf[PATH_MAX];
 
-  int i;
-  for(i = 0; i < fdt->max_fds; ++i) {
+  int i = 0;
 
-    if (fdt->fd[i] == NULL) continue;
+  for_each_process(t) {
 
-    struct fas_filp_info* finfo =
-      radix_tree_lookup(&fas_files_tree, (unsigned long)fdt->fd[i]);
+    if (t->files == NULL) continue;
 
-    if (finfo == NULL) continue;
+    int fd;
+    int use_sessions = 0;
 
-    struct path* files_path = files_table->fd[i]->f_path;
-    char* cwd = d_path(&files_path, pathname, PATH_MAX);
+    // TODO maybe insert a lock for t->files
+    struct fdtable *fdt = files_fdtable(t->files);
+
+    for (fd = 0; fd < fdt->max_fds; ++fd) {
+
+      if (fdt->fd[fd] == NULL) continue;
+
+      struct fas_filp_info *finfo =
+          radix_tree_lookup(&fas_files_tree, (unsigned long)fdt->fd[fd]);
+
+      if (finfo == NULL) continue;
+
+      use_sessions = 1;
+      break;
+
+    }
+
+    if (use_sessions) {
+
+      memset(name_buf, 0, PATH_MAX);
+
+      size_t size = PAGE_SIZE - i;
+      // TODO maybe use tgid
+      size_t r =
+          snprintf(buf + i, size, "%s %d\n",
+                   fas_get_process_fullname(t, name_buf, PATH_MAX), t->pid);
+
+      if (r > size) {
+
+        i = PAGE_SIZE;
+        goto exit_list_procs;
+
+      }
+
+      i += r;
+
+    }
 
   }
 
-  return 0;
+exit_list_procs:
 
-} 
-*/
+  return i;
 
-
+}
 
