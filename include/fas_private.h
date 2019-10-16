@@ -8,6 +8,7 @@
 #include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/fs_struct.h>
+#include <linux/fsnotify.h>
 #include <linux/hashtable.h>
 #include <linux/init.h>
 #include <linux/ioctl.h>

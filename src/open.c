@@ -51,7 +51,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   }
 
-  // fsnotify_open(b_filp);
+  fsnotify_open(b_filp);
   fd_install(fd, b_filp);
 
   r = fas_filp_copy(a_filp, b_filp);
