@@ -1,5 +1,6 @@
-NAME = test_open.bin
-OBJECTS = test_open.o
+NAMES := test_open test_sigpipe test_multisessions
+BINS := $(addsuffix .bin, $(NAMES))
+OBJECTS := $(addsuffix .o, $(NAMES))
 
 HDR_PATH ?= ../include/
 LIB_PATH ?= ../libfas/
@@ -9,13 +10,10 @@ CFLAGS += -I$(HDR_PATH) -Wall -D_FORTIFY_SOURCE=2 -Wno-pointer-sign
 
 COMMON_HDR = $(HDR_PATH)fas.h
 
-all: $(NAME)
-
-$(NAME): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $(LIB_PATH)/libfas.o $(OBJECTS) $(LDFLAGS)
+all: $(BINS)
 
 %.bin: %.c $(COMMON_HDR)
-	$(CC) $(CFLAGS) -fPIC -c $< -o $@
+	$(CC) $(CFLAGS) $< -o $@ $(LIB_PATH)/libfas.o $(LDFLAGS)
 
 clean:
-	rm -rf $(OBJECTS) $(NAME)
+	rm -rf $(OBJECTS) $(BINS)

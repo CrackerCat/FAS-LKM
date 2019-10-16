@@ -23,6 +23,7 @@
 #include <linux/buffer_head.h>
 #include <linux/kprobes.h>
 #include <linux/radix-tree.h>
+#include <linux/hashtable.h>
 
 #include "fas.h"
 
@@ -83,9 +84,10 @@
 
 struct fas_filp_info {
 
+  struct file            *filp;
+  struct file_operations *orig_f_op;
   char *                  pathname;
   int                     flags;
-  struct file_operations *orig_f_op;
   unsigned char           is_w;
 
 };
@@ -115,6 +117,9 @@ ssize_t fas_initial_path_show(struct kobject *kobj, struct kobj_attribute *attr,
                               char *buf);
 ssize_t fas_intial_path_store(struct kobject *kobj, struct kobj_attribute *attr,
                               const char *buf, size_t count);
+ssize_t fas_sessions_num_show(struct kobject *kobj, struct kobj_attribute *attr,
+                              char *buf);
+ssize_t fas_sessions_each_file_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
 
 #endif
 

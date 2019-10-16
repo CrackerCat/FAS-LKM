@@ -13,16 +13,21 @@ EXPORT_SYMBOL(fas_files_tree);
 
 struct kobject *fas_kobj;
 
-long fas_opened_sessions_num;
-EXPORT_SYMBOL(fas_opened_sessions_num);
-
-static struct kobj_attribute fas_kobj_attribute =
+static struct kobj_attribute fas_initial_path_attribute =
     __ATTR(initial_path, S_IRUGO | S_IWUSR, fas_initial_path_show,
            fas_intial_path_store);
 
+static struct kobj_attribute fas_sessions_num_attribute =
+    __ATTR(sessions_num, S_IRUGO , fas_sessions_num_show, 0);
+
+static struct kobj_attribute fas_sessions_each_file_attribute =
+    __ATTR(sessions_each_file, S_IRUGO , fas_sessions_each_file_show, 0);
+
 static struct attribute *fas_attrs[] = {
 
-    &fas_kobj_attribute.attr,
+    &fas_initial_path_attribute.attr,
+    &fas_sessions_num_attribute.attr,
+    &fas_sessions_each_file_attribute.attr,
     NULL,
 
 };
