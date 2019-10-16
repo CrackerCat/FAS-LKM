@@ -85,7 +85,6 @@
 
 struct fas_filp_info {
 
-  struct file *           filp;
   struct file_operations *orig_f_op;
   char *                  pathname;
   int                     flags;

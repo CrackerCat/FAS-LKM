@@ -12,9 +12,9 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
   if (finfo == NULL) return -EINVAL;
 
   FAS_DEBUG("fas_file_release: found finfo = %p", finfo);
+  FAS_DEBUG("fas_file_release:   finfo->orig_f_op = %p", finfo->orig_f_op);
   FAS_DEBUG("fas_file_release:   finfo->pathname  = %s", finfo->pathname);
   FAS_DEBUG("fas_file_release:   finfo->flags     = %d", finfo->flags);
-  FAS_DEBUG("fas_file_release:   finfo->orig_f_op = %p", finfo->orig_f_op);
   FAS_DEBUG("fas_file_release:   finfo->is_w      = %d", finfo->is_w);
 
   int r = 0;

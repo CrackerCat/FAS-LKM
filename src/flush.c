@@ -13,9 +13,9 @@ int fas_file_flush(struct file* filep, fl_owner_t id) {
   if (finfo == NULL) return -EINVAL;
 
   FAS_DEBUG("fas_file_flush: found finfo = %p", finfo);
+  FAS_DEBUG("fas_file_flush:   finfo->orig_f_op = %p", finfo->orig_f_op);
   FAS_DEBUG("fas_file_flush:   finfo->pathname  = %s", finfo->pathname);
   FAS_DEBUG("fas_file_flush:   finfo->flags     = %d", finfo->flags);
-  FAS_DEBUG("fas_file_flush:   finfo->orig_f_op = %p", finfo->orig_f_op);
   FAS_DEBUG("fas_file_flush:   finfo->is_w      = %d", finfo->is_w);
 
   if (finfo->is_w) {

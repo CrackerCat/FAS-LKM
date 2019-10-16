@@ -72,13 +72,11 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   filp_close(a_filp, NULL);
 
-  finfo->filp = b_filp;
   finfo->orig_f_op = (struct file_operations *)b_filp->f_op;
   finfo->flags = a_flags & ~(O_CREAT | O_EXCL);
   finfo->is_w = (is_w != 0);
 
   FAS_DEBUG("fas_ioctl_open: generated finfo = %p", finfo);
-  FAS_DEBUG("fas_ioctl_open:   finfo->filp      = %p", finfo->filp);
   FAS_DEBUG("fas_ioctl_open:   finfo->orig_f_op = %p", finfo->orig_f_op);
   FAS_DEBUG("fas_ioctl_open:   finfo->pathname  = %s", finfo->pathname);
   FAS_DEBUG("fas_ioctl_open:   finfo->flags     = %d", finfo->flags);
