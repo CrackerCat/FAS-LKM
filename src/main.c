@@ -20,10 +20,14 @@ static struct kobj_attribute fas_initial_path_attribute =
 static struct kobj_attribute fas_sessions_num_attribute =
     __ATTR(sessions_num, S_IRUGO , fas_sessions_num_show, 0);
 
+static struct kobj_attribute fas_sessions_each_file_attribute =
+    __ATTR(sessions_each_file, S_IRUGO , fas_sessions_each_file_show, 0);
+
 static struct attribute *fas_attrs[] = {
 
     &fas_initial_path_attribute.attr,
     &fas_sessions_num_attribute.attr,
+    &fas_sessions_each_file_attribute.attr,
     NULL,
 
 };

@@ -25,7 +25,7 @@ int fas_file_flush(struct file* filep, fl_owner_t id) {
     a_filp = filp_open(finfo->pathname, finfo->flags, 0);
     set_fs(oldfs);
 
-    if (a_filp == NULL) {
+    if (IS_ERR(a_filp)) {
 
       fas_send_signal(SIGPIPE);
       return -EPIPE;
