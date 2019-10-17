@@ -10,7 +10,7 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
   struct fas_filp_info *finfo =
       radix_tree_lookup(&fas_files_tree, (unsigned long)filep);
 
-  if (finfo == NULL) return -EINVAL;
+  if (finfo == NULL) return -EINVAL;               /* Should *never* happen */
 
   FAS_DEBUG("fas_file_flush: found finfo = %p", finfo);
   FAS_DEBUG("fas_file_flush:   finfo->orig_f_op = %p", finfo->orig_f_op);
@@ -21,7 +21,7 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
   if (finfo->is_w) {
 
     oldfs = get_fs();
-    set_fs(KERNEL_DS);                    /* Set fs related to kernel space */
+    set_fs(KERNEL_DS);
     a_filp = filp_open(finfo->pathname, finfo->flags, 0);
     set_fs(oldfs);
 
@@ -59,7 +59,7 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
 
   atomic_long_sub(1, &fas_opened_sessions_num);
 
-  if (finfo == NULL) return -EINVAL;
+  if (finfo == NULL) return -EINVAL;               /* Should *never* happen */
 
   FAS_DEBUG("fas_file_release: found finfo = %p", finfo);
   FAS_DEBUG("fas_file_release:   finfo->orig_f_op = %p", finfo->orig_f_op);
@@ -75,7 +75,6 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
 
   if (finfo->orig_f_op->release) r = finfo->orig_f_op->release(inodep, filep);
 
-  kfree(finfo->pathname);
   kfree(finfo);
 
   return r;

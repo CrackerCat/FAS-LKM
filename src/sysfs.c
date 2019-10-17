@@ -62,7 +62,7 @@ ssize_t fas_sessions_num_show(struct kobject *kobj, struct kobj_attribute *attr,
 
 struct fas_files_h_struct {
 
-  char *            key;
+  char              key[PATH_MAX];
   int               counter;
   struct hlist_node node;
 
@@ -96,24 +96,32 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
                                     struct kobj_attribute *attr, char *buf) {
 
   struct fas_htable *table = kzalloc(sizeof(struct fas_htable), GFP_KERNEL);
+  if (table == NULL) return 0;                   /* Cannot return ENOMEM :( */
 
   hash_init(table->ht);
 
-  struct radix_tree_iter iter;
-  void **                slot;
+  struct radix_tree_iter     iter;
+  struct fas_files_h_struct *entry;
+
+  void **slot;
+  char   path_buf[PATH_MAX];
+
+  int i = 0;
 
   radix_tree_for_each_slot(slot, &fas_files_tree, &iter, 0) {
 
+    // TODO lock the slot deref with rcu
     struct fas_filp_info *finfo = radix_tree_deref_slot(slot);
     if (finfo == NULL) continue;
 
-    int                        key = fas_key_hash(finfo->pathname);
-    struct fas_files_h_struct *entry;
-    int                        present = 0;
+    memcpy(path_buf, finfo->pathname, PATH_MAX);
+
+    int key = fas_key_hash(path_buf);
+    int present = 0;
 
     hash_for_each_possible(table->ht, entry, node, key) {
 
-      if (strcmp(entry->key, finfo->pathname)) continue;
+      if (strcmp(entry->key, path_buf)) continue;
 
       present = 1;
       entry->counter++;
@@ -124,7 +132,9 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
     if (!present) {
 
       entry = kzalloc(sizeof(struct fas_files_h_struct), GFP_KERNEL);
-      entry->key = finfo->pathname;  // TODO copy for race
+      if (entry == NULL) goto exit_list_files;
+
+      memcpy(entry->key, path_buf, PATH_MAX);
       entry->counter = 1;
       hash_add(table->ht, &entry->node, key);
 
@@ -132,12 +142,10 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
 
   }
 
-  int                        bkt, i = 0;
-  struct fas_files_h_struct *entry;
-
+  int bkt;
   hash_for_each(table->ht, bkt, entry, node) {
 
-    if (entry->key) {
+    if (entry->counter) {
 
       size_t size = PAGE_SIZE - i;
       size_t r = snprintf(buf + i, size, "%s %d\n", entry->key, entry->counter);
@@ -158,7 +166,6 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
 exit_list_files:
 
   kfree(table);
-
   return i;
 
 }
@@ -178,7 +185,7 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
     int fd;
     int use_sessions = 0;
 
-    // TODO maybe insert a lock for t->files
+    // TODO insert a lock for t->files
     struct fdtable *fdt = files_fdtable(t->files);
 
     for (fd = 0; fd < fdt->max_fds; ++fd) {
@@ -200,7 +207,7 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
       memset(name_buf, 0, PATH_MAX);
 
       size_t size = PAGE_SIZE - i;
-      // TODO maybe use tgid
+
       size_t r =
           snprintf(buf + i, size, "%s %d\n",
                    fas_get_process_fullname(t, name_buf, PATH_MAX), t->pid);

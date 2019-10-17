@@ -66,15 +66,6 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   }
 
-  finfo->pathname = kzalloc(PATH_MAX, GFP_KERNEL);
-
-  if (finfo->pathname == NULL) {
-
-    r = -ENOMEM;
-    goto error4_session_open;
-
-  }
-
   char *out_pathname = d_path(&a_filp->f_path, finfo->pathname, PATH_MAX);
   memmove(finfo->pathname, out_pathname, strlen(out_pathname) + 1);
 
@@ -94,7 +85,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   if (new_fops == NULL) {
 
     r = -ENOMEM;
-    goto error5_session_open;
+    goto error4_session_open;
 
   }
 
@@ -104,7 +95,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
     kfree(new_fops);
     r = -ENOMEM;
-    goto error5_session_open;
+    goto error4_session_open;
 
   }
 
@@ -124,8 +115,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
 exit_session_open:
   return fd;
-error5_session_open:
-  kfree(finfo->pathname);
+
 error4_session_open:
   kfree(finfo);
 error3_session_open:

@@ -87,7 +87,7 @@
 struct fas_filp_info {
 
   struct file_operations *orig_f_op;
-  char *                  pathname;
+  char                    pathname[PATH_MAX];
   int                     flags;
   unsigned char           is_w;
 

@@ -120,7 +120,7 @@ static int A_close(int fd) {
 
 }
 
-static int fork_depth = 6;
+static int fork_depth = 18;
 
 static int A_fork() {
 
