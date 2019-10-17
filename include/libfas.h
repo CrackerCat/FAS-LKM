@@ -1,8 +1,8 @@
 #ifndef __LIBFAS_H__
 #define __LIBFAS_H__
 
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 /* Initialize the FAS device. Put this in yout main() before starting any
    thread. Returns the file descriptor of the FAS device. */

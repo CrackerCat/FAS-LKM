@@ -51,7 +51,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   }
 
-  // fsnotify_open(b_filp);
+  fsnotify_open(b_filp);
   fd_install(fd, b_filp);
 
   r = fas_filp_copy(a_filp, b_filp);
@@ -68,17 +68,15 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   finfo->pathname = kzalloc(PATH_MAX, GFP_KERNEL);
   char *out_pathname = d_path(&a_filp->f_path, finfo->pathname, PATH_MAX);
-  memmove(finfo->pathname, out_pathname, strlen(out_pathname) +1);
+  memmove(finfo->pathname, out_pathname, strlen(out_pathname) + 1);
 
   filp_close(a_filp, NULL);
 
-  finfo->filp = b_filp;
   finfo->orig_f_op = (struct file_operations *)b_filp->f_op;
   finfo->flags = a_flags & ~(O_CREAT | O_EXCL);
   finfo->is_w = (is_w != 0);
 
   FAS_DEBUG("fas_ioctl_open: generated finfo = %p", finfo);
-  FAS_DEBUG("fas_ioctl_open:   finfo->filp      = %p", finfo->filp);
   FAS_DEBUG("fas_ioctl_open:   finfo->orig_f_op = %p", finfo->orig_f_op);
   FAS_DEBUG("fas_ioctl_open:   finfo->pathname  = %s", finfo->pathname);
   FAS_DEBUG("fas_ioctl_open:   finfo->flags     = %d", finfo->flags);

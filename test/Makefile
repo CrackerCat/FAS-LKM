@@ -1,4 +1,4 @@
-NAMES := test_open test_sigpipe test_multisessions
+NAMES := test_open test_sigpipe test_multisessions test_fuzz
 BINS := $(addsuffix .bin, $(NAMES))
 OBJECTS := $(addsuffix .o, $(NAMES))
 

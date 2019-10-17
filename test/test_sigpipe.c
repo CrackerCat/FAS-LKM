@@ -1,9 +1,9 @@
-#include "libfas.h"
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <signal.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include "libfas.h"
 
 void handler(int signum) {
 
