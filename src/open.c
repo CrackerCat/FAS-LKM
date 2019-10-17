@@ -9,6 +9,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   /* Session temporary files are not a thing. For O_PATH use regular open() */
   if (flags & (O_TMPFILE | O_PATH)) return -EINVAL;
 
+  // TODO use filp path to avoid race
   if (!fas_is_subpath(fas_initial_path, filename, 1)) return -EINVAL;
 
   struct file *a_filp = NULL;
@@ -21,56 +22,61 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   else
     a_flags &= O_RDONLY;
 
+  int fd = get_unused_fd_flags(O_TMPFILE | O_EXCL | O_RDWR);
+  FAS_DEBUG("fas_ioctl_open: fd = %d", fd);
+  if (fd < 0) goto exit_session_open;
+
   oldfs = get_fs();
-  set_fs(KERNEL_DS);                      /* Set fs related to kernel space */
+  set_fs(KERNEL_DS);
   a_filp = filp_open(filename, a_flags, mode);
   set_fs(oldfs);
 
   FAS_DEBUG("fas_ioctl_open: a_filp = %p", a_filp);
+  if (IS_ERR(a_filp)) {
 
-  if (IS_ERR(a_filp)) return PTR_ERR(a_filp);
+    r = PTR_ERR(a_filp);
+    goto error1_session_open;
 
-  int fd = get_unused_fd_flags(O_TMPFILE | O_EXCL | O_RDWR);
-  if (fd < 0) return fd;
-
-  FAS_DEBUG("fas_ioctl_open: fd = %d", fd);
+  }
 
   oldfs = get_fs();
-  set_fs(KERNEL_DS);                      /* Set fs related to kernel space */
+  set_fs(KERNEL_DS);
   struct file *b_filp =
       filp_open(fas_initial_path, O_TMPFILE | O_EXCL | O_RDWR, 0644);
   set_fs(oldfs);
 
   FAS_DEBUG("fas_ioctl_open: b_filp = %p", b_filp);
-
   if (IS_ERR(b_filp)) {
 
-    filp_close(a_filp, NULL);
-    put_unused_fd(fd);
-    return PTR_ERR(a_filp);
+    r = PTR_ERR(b_filp);
+    goto error2_session_open;
 
   }
-
-  fsnotify_open(b_filp);
-  fd_install(fd, b_filp);
 
   r = fas_filp_copy(a_filp, b_filp);
-  if (r < 0) {
-
-    filp_close(a_filp, NULL);
-    filp_close(b_filp, NULL);
-    return r;
-
-  }
+  if (r < 0) goto error3_session_open;
 
   struct fas_filp_info *finfo =
       kmalloc(sizeof(struct fas_filp_info), GFP_KERNEL);
 
+  if (finfo == NULL) {
+
+    r = -ENOMEM;
+    goto error3_session_open;
+
+  }
+
   finfo->pathname = kzalloc(PATH_MAX, GFP_KERNEL);
+
+  if (finfo->pathname == NULL) {
+
+    r = -ENOMEM;
+    goto error4_session_open;
+
+  }
+
   char *out_pathname = d_path(&a_filp->f_path, finfo->pathname, PATH_MAX);
   memmove(finfo->pathname, out_pathname, strlen(out_pathname) + 1);
-
-  filp_close(a_filp, NULL);
 
   finfo->orig_f_op = (struct file_operations *)b_filp->f_op;
   finfo->flags = a_flags & ~(O_CREAT | O_EXCL);
@@ -82,12 +88,25 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   FAS_DEBUG("fas_ioctl_open:   finfo->flags     = %d", finfo->flags);
   FAS_DEBUG("fas_ioctl_open:   finfo->is_w      = %d", finfo->is_w);
 
-  radix_tree_insert(&fas_files_tree, (unsigned long)b_filp, finfo);
-
   struct file_operations *new_fops =
       kmalloc(sizeof(struct file_operations), GFP_KERNEL);
 
+  if (new_fops == NULL) {
+
+    r = -ENOMEM;
+    goto error5_session_open;
+
+  }
+
   FAS_DEBUG("fas_ioctl_open: new_fops = %p", new_fops);
+
+  if (radix_tree_insert(&fas_files_tree, (unsigned long)b_filp, finfo) < 0) {
+
+    kfree(new_fops);
+    r = -ENOMEM;
+    goto error5_session_open;
+
+  }
 
   memcpy(new_fops, b_filp->f_op, sizeof(struct file_operations));
 
@@ -96,9 +115,26 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   b_filp->f_op = new_fops;
 
-  ++fas_opened_sessions_num;
+  filp_close(a_filp, NULL);
 
+  atomic_long_add(1, &fas_opened_sessions_num);
+
+  fsnotify_open(b_filp);
+  fd_install(fd, b_filp);
+
+exit_session_open:
   return fd;
+error5_session_open:
+  kfree(finfo->pathname);
+error4_session_open:
+  kfree(finfo);
+error3_session_open:
+  filp_close(b_filp, NULL);
+error2_session_open:
+  filp_close(a_filp, NULL);
+error1_session_open:
+  put_unused_fd(fd);
+  return r;
 
 }
 

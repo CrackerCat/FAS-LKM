@@ -54,10 +54,10 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
 
   FAS_DEBUG("fas_file_release: %p", filep);
 
-  --fas_opened_sessions_num;
-
   struct fas_filp_info *finfo =
       radix_tree_delete(&fas_files_tree, (unsigned long)filep);
+
+  atomic_long_sub(1, &fas_opened_sessions_num);
 
   if (finfo == NULL) return -EINVAL;
 

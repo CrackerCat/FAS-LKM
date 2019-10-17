@@ -1,15 +1,15 @@
 #include "fas_private.h"
 
 /* /sys/kernel/fas/initial_path */
-char fas_initial_path[PATH_MAX + 1] = {'/', 't', 'm', 'p', 0};
+char fas_initial_path[PATH_MAX] = {'/', 't', 'm', 'p', 0};
 EXPORT_SYMBOL(fas_initial_path);
 
 ssize_t fas_initial_path_show(struct kobject *kobj, struct kobj_attribute *attr,
                               char *buf) {
 
-  size_t size = strlen(fas_initial_path);
-  strncpy(buf, fas_initial_path, size);
-  return size;
+  size_t r = snprintf(buf, PAGE_SIZE, "%s\n", fas_initial_path);
+  if (r > PAGE_SIZE) r = PAGE_SIZE;
+  return r;
 
 }
 
@@ -32,13 +32,14 @@ ssize_t fas_intial_path_store(struct kobject *kobj, struct kobj_attribute *attr,
 }
 
 /* /sys/kernel/fas/sessions_num */
-long fas_opened_sessions_num;
+atomic_long_t fas_opened_sessions_num;
 EXPORT_SYMBOL(fas_opened_sessions_num);
 
 ssize_t fas_sessions_num_show(struct kobject *kobj, struct kobj_attribute *attr,
                               char *buf) {
 
-  return snprintf(buf, PAGE_SIZE, "%ld", fas_opened_sessions_num);
+  return snprintf(buf, PAGE_SIZE, "%ld\n",
+                  atomic_long_read(&fas_opened_sessions_num));
 
   /* // Count sessions also using with refcounts
 
