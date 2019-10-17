@@ -1,13 +1,13 @@
 #include "fas_private.h"
 
-int fas_file_flush(struct file* filep, fl_owner_t id) {
+int fas_file_flush(struct file *filep, fl_owner_t id) {
 
-  struct file* a_filp = NULL;
+  struct file *a_filp = NULL;
   mm_segment_t oldfs;
 
   FAS_DEBUG("fas_file_flush: %p", filep);
 
-  struct fas_filp_info* finfo =
+  struct fas_filp_info *finfo =
       radix_tree_lookup(&fas_files_tree, (unsigned long)filep);
 
   if (finfo == NULL) return -EINVAL;
