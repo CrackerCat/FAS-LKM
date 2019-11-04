@@ -10,8 +10,20 @@
 1) Introduction
 ---------------
 
-Provide here a general picture of what the subsystem does and *how* it does.
-Don't go too much down in technical details.
+The File Access with Session (FAS) is a method to handle files in the operating
+system in which processes does not have to compete for the I/O on a file.
+
+In standard POSIX files, each I/O session on a resource is concurrent with
+others and the involved processe has to ensure the consistency using a
+synchronization meachanism and/or permissions.
+
+Using FAS, each instance has a temporary view of the file that can be modified
+only by the instance itself.
+The changes are then flushed to the resource when the session is closed in a
+way similar in spirit to the commit of a transaction in a database system.
+
+We implemented a Linux Kernel Module (LKM) that enable the userspace to use
+FAS on files inside an user-specified directory and its sub-directories. 
 
 2) User Space Library
 ---------------------
@@ -20,11 +32,24 @@ If you rely on some userspace library to wrap access to kernel-level facilities,
 this is the place to describe its interface to applications and it internal
 organization.
 
+int fas_init()
+
+int fas_open(char* pathname, int flags, mode_t mode)
+
 3) Kernel-Level Data Structures
 -------------------------------
 
 Provide here a description of the most important kernel-level data structures
 that you have implemented. They will be referenced in the next section
+
+struct fas_filp_info {
+
+  struct file_operations *orig_f_op;
+  char                    pathname[PATH_MAX];
+  int                     flags;
+  unsigned char           is_w;
+
+};
 
 4) Kernel-Level Subsystem Implementation
 ----------------------------------------

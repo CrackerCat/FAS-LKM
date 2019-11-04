@@ -49,10 +49,11 @@ ssize_t fas_sessions_num_show(struct kobject *kobj, struct kobj_attribute *attr,
 
   radix_tree_for_each_slot(slot, &fas_files_tree, &iter,0) {
 
+    rcu_read_lock();
     struct fas_filp_info *finfo = radix_tree_deref_slot(slot);
-    if (finfo == NULL) continue;
-
-    if (finfo->filp) counter += atomic_long_read(&finfo->filp->f_count);
+    if (finfo != NULL && finfo->filp)
+      counter += atomic_long_read(&finfo->filp->f_count);
+    rcu_read_unlock();
 
   }
 
@@ -107,14 +108,16 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
   char   path_buf[PATH_MAX];
 
   int i = 0;
-
+  
   radix_tree_for_each_slot(slot, &fas_files_tree, &iter, 0) {
 
-    // TODO lock the slot deref with rcu
+    rcu_read_lock();
     struct fas_filp_info *finfo = radix_tree_deref_slot(slot);
+    if (finfo != NULL)
+      memcpy(path_buf, finfo->pathname, PATH_MAX);
+    rcu_read_unlock();
+    
     if (finfo == NULL) continue;
-
-    memcpy(path_buf, finfo->pathname, PATH_MAX);
 
     int key = fas_key_hash(path_buf);
     int present = 0;
@@ -141,6 +144,8 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
     }
 
   }
+  
+  rcu_read_unlock();
 
   int bkt;
   hash_for_each(table->ht, bkt, entry, node) {
@@ -178,20 +183,23 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
 
   int i = 0;
 
+  rcu_read_lock();
   for_each_process(t) {
+    rcu_read_unlock();
 
     if (t->files == NULL) continue;
 
     int fd;
     int use_sessions = 0;
 
-    // TODO insert a lock for t->files
+    rcu_read_lock();
     struct fdtable *fdt = files_fdtable(t->files);
 
     for (fd = 0; fd < fdt->max_fds; ++fd) {
 
       if (fdt->fd[fd] == NULL) continue;
 
+      /* rcu_read_lock already set */
       struct fas_filp_info *finfo =
           radix_tree_lookup(&fas_files_tree, (unsigned long)fdt->fd[fd]);
 
@@ -201,6 +209,7 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
       break;
 
     }
+    rcu_read_unlock();
 
     if (use_sessions) {
 
@@ -223,7 +232,9 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
 
     }
 
+    rcu_read_lock();
   }
+  rcu_read_unlock();
 
 exit_list_procs:
 

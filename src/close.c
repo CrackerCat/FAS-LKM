@@ -7,9 +7,11 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
 
   FAS_DEBUG("fas_file_flush: %p", filep);
 
+  rcu_read_lock();
   struct fas_filp_info *finfo =
       radix_tree_lookup(&fas_files_tree, (unsigned long)filep);
-
+  rcu_read_unlock();
+  
   if (finfo == NULL) return -EINVAL;               /* Should *never* happen */
 
   FAS_DEBUG("fas_file_flush: found finfo = %p", finfo);
@@ -54,6 +56,7 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
 
   FAS_DEBUG("fas_file_release: %p", filep);
 
+  /* Should we use RCU here? Doc says nothing... */
   struct fas_filp_info *finfo =
       radix_tree_delete(&fas_files_tree, (unsigned long)filep);
 
@@ -71,11 +74,13 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
 
   struct file_operations *new_fops = (struct file_operations *)filep->f_op;
   filep->f_op = finfo->orig_f_op;
+  
+  synchronize_rcu(); /* Wait all RCU readers */
+  kfree(finfo);
+  
   kfree(new_fops);
 
-  if (finfo->orig_f_op->release) r = finfo->orig_f_op->release(inodep, filep);
-
-  kfree(finfo);
+  if (filep->f_op) r = filep->f_op->release(inodep, filep);
 
   return r;
 
