@@ -44,9 +44,13 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
     }
 
   }
+  
+  int r = 0;
 
-  if (finfo->orig_f_op->flush) return finfo->orig_f_op->flush(filep, id);
-  return 0;
+  if (finfo->orig_f_op->flush) r = finfo->orig_f_op->flush(filep, id);
+  
+  FAS_DEBUG("fas_file_flush: return %d", r);
+  return r;
 
 }
 
@@ -76,12 +80,15 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
   filep->f_op = finfo->orig_f_op;
   
   synchronize_rcu(); /* Wait all RCU readers */
-  kfree(finfo);
   
+  kfree(finfo);
   kfree(new_fops);
+  FAS_DEBUG("fas_file_release: successfully released memory");
 
-  if (filep->f_op) r = filep->f_op->release(inodep, filep);
+  if (filep->f_op && filep->f_op->release)
+    r = filep->f_op->release(inodep, filep);
 
+  FAS_DEBUG("fas_file_release: return %d", r);
   return r;
 
 }
