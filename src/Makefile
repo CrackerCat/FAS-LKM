@@ -3,7 +3,7 @@ override M = $(PWD)
 endif
 
 obj-m += fas.o
-fas-objs := main.o ioctl.o open.o utils.o close.o sysfs.o
+fas-objs := main.o open.o utils.o close.o sysfs.o
 
 ccflags-y := \
   -DDEBUG \

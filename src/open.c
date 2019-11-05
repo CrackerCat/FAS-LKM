@@ -4,7 +4,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   int r;
 
-  FAS_DEBUG("fas_ioctl_open: %s, %x, %x", filename, flags, mode);
+  FAS_DEBUG("fas_ioctl_open: (%p) %s, %x, %x", filename, filename, flags, mode);
 
   /* Session temporary files are not a thing. For O_PATH use regular open() */
   if (flags & (O_TMPFILE | O_PATH)) return -EINVAL;
