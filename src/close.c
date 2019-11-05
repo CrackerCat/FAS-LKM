@@ -11,7 +11,7 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
   struct fas_filp_info *finfo =
       radix_tree_lookup(&fas_files_tree, (unsigned long)filep);
   rcu_read_unlock();
-  
+
   if (finfo == NULL) return -EINVAL;               /* Should *never* happen */
 
   FAS_DEBUG("fas_file_flush: found finfo = %p", finfo);
@@ -44,11 +44,11 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
     }
 
   }
-  
+
   int r = 0;
 
   if (finfo->orig_f_op->flush) r = finfo->orig_f_op->flush(filep, id);
-  
+
   FAS_DEBUG("fas_file_flush: return %d", r);
   return r;
 
@@ -78,9 +78,9 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
 
   struct file_operations *new_fops = (struct file_operations *)filep->f_op;
   filep->f_op = finfo->orig_f_op;
-  
-  synchronize_rcu(); /* Wait all RCU readers */
-  
+
+  synchronize_rcu();                                /* Wait all RCU readers */
+
   kfree(finfo);
   kfree(new_fops);
   FAS_DEBUG("fas_file_release: successfully released memory");

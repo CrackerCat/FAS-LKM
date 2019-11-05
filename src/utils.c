@@ -34,6 +34,29 @@ int fas_filp_copy(struct file* src, struct file* dst) {
 
 }
 
+int fas_is_subpath(struct path* path1, struct path* path2) {
+
+  int r = 0;
+
+  if (!path1 || !path2) goto end_is_subpath;
+
+  struct dentry* p = NULL;
+  for (p = path2.dentry; !IS_ROOT(p); p = p->d_parent) {
+
+    if (p->d_parent == path1.dentry) {
+
+      r = 1;
+      break;
+
+    }
+
+  }
+
+end_is_subpath:
+  return r;
+
+}
+
 int fas_is_subpath(char* super_pathname, char* sub_pathname, int follow_links) {
 
   struct path path1, path2;

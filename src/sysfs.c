@@ -108,15 +108,14 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
   char   path_buf[PATH_MAX];
 
   int i = 0;
-  
+
   radix_tree_for_each_slot(slot, &fas_files_tree, &iter, 0) {
 
     rcu_read_lock();
     struct fas_filp_info *finfo = radix_tree_deref_slot(slot);
-    if (finfo != NULL)
-      memcpy(path_buf, finfo->pathname, PATH_MAX);
+    if (finfo != NULL) memcpy(path_buf, finfo->pathname, PATH_MAX);
     rcu_read_unlock();
-    
+
     if (finfo == NULL) continue;
 
     int key = fas_key_hash(path_buf);
@@ -144,7 +143,7 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
     }
 
   }
-  
+
   rcu_read_unlock();
 
   int bkt;
@@ -185,6 +184,7 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
 
   rcu_read_lock();
   for_each_process(t) {
+
     rcu_read_unlock();
 
     if (t->files == NULL) continue;
@@ -209,6 +209,7 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
       break;
 
     }
+
     rcu_read_unlock();
 
     if (use_sessions) {
@@ -233,7 +234,9 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
     }
 
     rcu_read_lock();
+
   }
+
   rcu_read_unlock();
 
 exit_list_procs:

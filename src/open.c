@@ -9,8 +9,8 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   /* Session temporary files are not a thing. For O_PATH use regular open() */
   if (flags & (O_TMPFILE | O_PATH)) return -EINVAL;
 
-  // TODO use filp path to avoid race
-  if (!fas_is_subpath(fas_initial_path, filename, 1)) return -EINVAL;
+  struct path i_path;
+  if (kern_path(fas_initial_path, 0, &i_path)) return -EINVAL;
 
   struct file *a_filp = NULL;
   mm_segment_t oldfs;
@@ -38,6 +38,8 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
     goto error1_session_open;
 
   }
+
+  if (!fas_is_subpath(&i_path, a_filp->path)) return -EINVAL;
 
   oldfs = get_fs();
   set_fs(KERNEL_DS);
@@ -124,6 +126,8 @@ error2_session_open:
   filp_close(a_filp, NULL);
 error1_session_open:
   put_unused_fd(fd);
+  put_path(&i_path);
+
   return r;
 
 }

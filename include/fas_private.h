@@ -104,9 +104,9 @@ extern atomic_long_t fas_opened_sessions_num;
 extern int           fas_major_num;  /* Dinamically allocated device number */
 extern struct class *fas_class;                     /* Class struct for FAS */
 
-int fas_filp_copy(struct file *src, struct file *dst);
-int fas_is_subpath(char *super_pathname, char *sub_pathname, int follow_links);
-int fas_send_signal(int sig_num);
+int   fas_filp_copy(struct file *src, struct file *dst);
+int   fas_is_subpath(struct path *path1, struct path *path2);
+int   fas_send_signal(int sig_num);
 char *fas_get_process_fullname(struct task_struct *t, char *buf, size_t size);
 
 long fas_dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
