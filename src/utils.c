@@ -41,40 +41,9 @@ int fas_is_subpath(struct path* path1, struct path* path2) {
   if (!path1 || !path2) goto end_is_subpath;
 
   struct dentry* p = NULL;
-  for (p = path2.dentry; !IS_ROOT(p); p = p->d_parent) {
+  for (p = path2->dentry; !IS_ROOT(p); p = p->d_parent) {
 
-    if (p->d_parent == path1.dentry) {
-
-      r = 1;
-      break;
-
-    }
-
-  }
-
-end_is_subpath:
-  return r;
-
-}
-
-int fas_is_subpath(char* super_pathname, char* sub_pathname, int follow_links) {
-
-  struct path path1, path2;
-  int         r = 0;
-
-  int follow_param = 0;
-  if (follow_links) follow_param = LOOKUP_FOLLOW;
-
-  if (!super_pathname || kern_path(super_pathname, LOOKUP_FOLLOW, &path1))
-    goto end_is_subpath;
-
-  if (!sub_pathname || kern_path(sub_pathname, follow_param, &path2))
-    goto path1_cleanup;
-
-  struct dentry* p = NULL;
-  for (p = path2.dentry; !IS_ROOT(p); p = p->d_parent) {
-
-    if (p->d_parent == path1.dentry) {
+    if (p->d_parent == path1->dentry) {
 
       r = 1;
       break;
@@ -82,11 +51,6 @@ int fas_is_subpath(char* super_pathname, char* sub_pathname, int follow_links) {
     }
 
   }
-
-  path_put(&path2);
-
-path1_cleanup:
-  path_put(&path1);
 
 end_is_subpath:
   return r;

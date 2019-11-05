@@ -39,8 +39,8 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   }
 
-  if (!fas_is_subpath(&i_path, a_filp->path)) return -EINVAL;
-
+  if (!fas_is_subpath(&i_path, &a_filp->f_path)) return -EINVAL;
+  
   oldfs = get_fs();
   set_fs(KERNEL_DS);
   struct file *b_filp =
@@ -126,7 +126,7 @@ error2_session_open:
   filp_close(a_filp, NULL);
 error1_session_open:
   put_unused_fd(fd);
-  put_path(&i_path);
+  path_put(&i_path);
 
   return r;
 
