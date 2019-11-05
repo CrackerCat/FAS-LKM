@@ -12,7 +12,14 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
       radix_tree_lookup(&fas_files_tree, (unsigned long)filep);
   rcu_read_unlock();
 
-  if (finfo == NULL) return -EINVAL;               /* Should *never* happen */
+  if (finfo == NULL) {                             /* Should *never* happen */
+    FAS_FATAL(
+        "radix_tree_lookup of fas_files_tree returned NULL. This is a critical "
+        "state reached for an unknow reason, unload the module ASAP or, "
+        "better, reboot");
+    return -EINVAL;
+
+  }
 
   FAS_DEBUG("fas_file_flush: found finfo = %p", finfo);
   FAS_DEBUG("fas_file_flush:   finfo->orig_f_op = %p", finfo->orig_f_op);
@@ -66,7 +73,14 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
 
   atomic_long_sub(1, &fas_opened_sessions_num);
 
-  if (finfo == NULL) return -EINVAL;               /* Should *never* happen */
+  if (finfo == NULL) {                             /* Should *never* happen */
+    FAS_FATAL(
+        "radix_tree_delete of fas_files_tree returned NULL. This is a critical "
+        "state reached for an unknow reason, unload the module ASAP or, "
+        "better, reboot");
+    return -EINVAL;
+
+  }
 
   FAS_DEBUG("fas_file_release: found finfo = %p", finfo);
   FAS_DEBUG("fas_file_release:   finfo->orig_f_op = %p", finfo->orig_f_op);

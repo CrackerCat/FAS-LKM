@@ -10,7 +10,14 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   if (flags & (O_TMPFILE | O_PATH)) return -EINVAL;
 
   struct path i_path;
-  if (kern_path(fas_initial_path, 0, &i_path)) return -EINVAL;
+  if (kern_path(fas_initial_path, 0, &i_path)) {
+
+    FAS_WARN(
+        "fas_ioctl_open: the FAS initial path is not a valid path, please "
+        "change it writing in /sys/kernel/fas/initial_path");
+    return -EINVAL;
+
+  }
 
   struct file *a_filp = NULL;
   mm_segment_t oldfs;
@@ -40,7 +47,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   }
 
   if (!fas_is_subpath(&i_path, &a_filp->f_path)) return -EINVAL;
-  
+
   oldfs = get_fs();
   set_fs(KERNEL_DS);
   struct file *b_filp =
