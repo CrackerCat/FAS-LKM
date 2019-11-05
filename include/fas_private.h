@@ -87,7 +87,7 @@
 struct fas_filp_info {
 
   struct file_operations *orig_f_op;
-  char *                  pathname;
+  char                    pathname[PATH_MAX];
   int                     flags;
   unsigned char           is_w;
 
@@ -95,9 +95,9 @@ struct fas_filp_info {
 
 extern struct radix_tree_root fas_files_tree;
 
-extern char fas_initial_path[PATH_MAX + 1];
+extern char fas_initial_path[PATH_MAX];
 
-extern long fas_opened_sessions_num;
+extern atomic_long_t fas_opened_sessions_num;
 
 /* Cross object variables */
 
