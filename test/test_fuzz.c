@@ -118,13 +118,13 @@ static char* A_get_sysfs_filename() {
 
 static int A_open_rdonly(char* filename) {
 
-  return fas_open(filename, O_RDONLY, 0);
+  return fas_open(filename, O_RDONLY);
 
 }
 
 static int A_open_rw(char* filename) {
 
-  return fas_open(filename, O_RDWR, 0);
+  return fas_open(filename, O_RDWR);
 
 }
 

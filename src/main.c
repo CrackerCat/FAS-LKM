@@ -82,8 +82,7 @@ long fas_dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) {
       /* Ensure NUL termination */
       open_args.pathname[PATH_MAX - 1] = 0;
 
-      return fas_ioctl_open(open_args.pathname, open_args.flags,
-                            open_args.mode);
+      return fas_ioctl_open(open_args.pathname, open_args.flags);
       break;
 
     }

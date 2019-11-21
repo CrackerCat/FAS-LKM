@@ -15,11 +15,10 @@ int fas_init() {
 
 }
 
-int fas_open(char* pathname, int flags, mode_t mode) {
+int fas_open(const char* pathname, int flags) {
 
   struct fas_open_args args;
   args.flags = flags;
-  args.mode = mode;
   strncpy(args.pathname, pathname, PATH_MAX);
 
   return ioctl(fas_dev_fd, FAS_IOCTL_OPEN, &args);

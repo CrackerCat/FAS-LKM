@@ -114,7 +114,7 @@ char *fas_get_process_fullname(struct task_struct *t, char *buf, size_t size);
 long fas_dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 
 /* Note: fas_ioctl_open expects filename as a kernel address */
-int fas_ioctl_open(char *filename, int flags, mode_t mode);
+int fas_ioctl_open(char *filename, int flags);
 int fas_file_release(struct inode *inodep, struct file *filep);
 int fas_file_flush(struct file *filep, fl_owner_t id);
 

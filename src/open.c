@@ -1,10 +1,10 @@
 #include "fas_private.h"
 
-int fas_ioctl_open(char *filename, int flags, mode_t mode) {
+int fas_ioctl_open(char *filename, int flags) {
 
   int r;
 
-  FAS_DEBUG("fas_ioctl_open: (%p) %s, %x, %x", filename, filename, flags, mode);
+  FAS_DEBUG("fas_ioctl_open: (%p) %s, %x", filename, filename, flags);
 
   /* Session temporary files are not a thing. For O_PATH use regular open().
      We don't allow creation of files with fas_open, see the DOCS. */
@@ -36,10 +36,10 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   oldfs = get_fs();
   set_fs(KERNEL_DS);
-  a_filp = filp_open(filename, a_flags, mode);
+  a_filp = filp_open(filename, a_flags, 0);
   set_fs(oldfs);
 
-  FAS_DEBUG("fas_ioctl_open: a_filp = %p, %d, %d", a_filp, a_flags, mode);
+  FAS_DEBUG("fas_ioctl_open: a_filp = %p, %x", a_filp, a_flags);
   if (IS_ERR(a_filp)) {
 
     FAS_DEBUG("fas_ioctl_open: failed to open a_filp");
@@ -88,7 +88,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   memmove(finfo->pathname, out_pathname, strlen(out_pathname) + 1);
 
   finfo->orig_f_op = (struct file_operations *)b_filp->f_op;
-  finfo->flags = a_flags & ~(O_CREAT | O_EXCL);
+  finfo->flags = a_flags & ~(O_EXCL);
   finfo->is_w = (is_w != 0);
 
   FAS_DEBUG("fas_ioctl_open: generated finfo = %p", finfo);

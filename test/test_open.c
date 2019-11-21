@@ -12,7 +12,7 @@ int main() {
 
   fas_init();
 
-  fd = fas_open("/tmp/pippo.txt", O_RDWR, 0);
+  fd = fas_open("/tmp/pippo.txt", O_RDWR);
   printf("fd: %d\n", fd);
 
   char buf[32] = {0};

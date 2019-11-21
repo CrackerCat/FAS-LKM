@@ -13,7 +13,6 @@ struct fas_open_args {
 
   char   pathname[PATH_MAX];
   int    flags;
-  mode_t mode;
 
 };
 
