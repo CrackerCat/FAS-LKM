@@ -10,8 +10,9 @@ int fas_init();
 
 /* Open a session on a file. Unsupported flags are:
     - O_TMPFILE
-    - O_PATH */
-int fas_open(char* pathname, int flags, mode_t mode);
+    - O_PATH
+    - O_CREAT */
+int fas_open(const char* pathname, int flags);
 
 #endif
 

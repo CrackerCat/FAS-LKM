@@ -26,6 +26,7 @@
 #include <linux/time.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
+#include <linux/semaphore.h>
 
 #include "fas.h"
 
@@ -94,6 +95,7 @@ struct fas_filp_info {
 };
 
 extern struct radix_tree_root fas_files_tree;
+extern rwlock_t fas_files_tree_lock;
 
 extern char fas_initial_path[PATH_MAX];
 
@@ -104,14 +106,15 @@ extern atomic_long_t fas_opened_sessions_num;
 extern int           fas_major_num;  /* Dinamically allocated device number */
 extern struct class *fas_class;                     /* Class struct for FAS */
 
-int fas_filp_copy(struct file *src, struct file *dst);
-int fas_is_subpath(char *super_pathname, char *sub_pathname, int follow_links);
-int fas_send_signal(int sig_num);
+int   fas_filp_copy(struct file *src, struct file *dst);
+int   fas_is_subpath(struct path *path1, struct path *path2);
+int   fas_send_signal(int sig_num);
 char *fas_get_process_fullname(struct task_struct *t, char *buf, size_t size);
 
 long fas_dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
 
-int fas_ioctl_open(char *filename, int flags, mode_t mode);
+/* Note: fas_ioctl_open expects filename as a kernel address */
+int fas_ioctl_open(char *filename, int flags);
 int fas_file_release(struct inode *inodep, struct file *filep);
 int fas_file_flush(struct file *filep, fl_owner_t id);
 

@@ -7,12 +7,24 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
 
   FAS_DEBUG("fas_file_flush: %p", filep);
 
+  /* https://lwn.net/Articles/175432/
+     Flush is an atomic context for the resulting pointer (release is always
+     after and not concurrent) and so RCU only is fine here. */
+  // read_lock(&fas_files_tree_lock);
   rcu_read_lock();
   struct fas_filp_info *finfo =
       radix_tree_lookup(&fas_files_tree, (unsigned long)filep);
   rcu_read_unlock();
-  
-  if (finfo == NULL) return -EINVAL;               /* Should *never* happen */
+  // read_unlock(&fas_files_tree_lock);
+
+  if (finfo == NULL) {                             /* Should *never* happen */
+    FAS_FATAL(
+        "radix_tree_lookup of fas_files_tree returned NULL. This is a critical "
+        "state reached for an unknow reason, unload the module ASAP or, "
+        "better, reboot");
+    return -EINVAL;
+
+  }
 
   FAS_DEBUG("fas_file_flush: found finfo = %p", finfo);
   FAS_DEBUG("fas_file_flush:   finfo->orig_f_op = %p", finfo->orig_f_op);
@@ -44,11 +56,11 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
     }
 
   }
-  
+
   int r = 0;
 
   if (finfo->orig_f_op->flush) r = finfo->orig_f_op->flush(filep, id);
-  
+
   FAS_DEBUG("fas_file_flush: return %d", r);
   return r;
 
@@ -61,12 +73,21 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
   FAS_DEBUG("fas_file_release: %p", filep);
 
   /* Should we use RCU here? Doc says nothing... */
+  write_lock(&fas_files_tree_lock);
   struct fas_filp_info *finfo =
       radix_tree_delete(&fas_files_tree, (unsigned long)filep);
+  write_unlock(&fas_files_tree_lock);
 
   atomic_long_sub(1, &fas_opened_sessions_num);
 
-  if (finfo == NULL) return -EINVAL;               /* Should *never* happen */
+  if (finfo == NULL) {                             /* Should *never* happen */
+    FAS_FATAL(
+        "radix_tree_delete of fas_files_tree returned NULL. This is a critical "
+        "state reached for an unknow reason, unload the module ASAP or, "
+        "better, reboot");
+    return -EINVAL;
+
+  }
 
   FAS_DEBUG("fas_file_release: found finfo = %p", finfo);
   FAS_DEBUG("fas_file_release:   finfo->orig_f_op = %p", finfo->orig_f_op);
@@ -78,9 +99,9 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
 
   struct file_operations *new_fops = (struct file_operations *)filep->f_op;
   filep->f_op = finfo->orig_f_op;
-  
-  synchronize_rcu(); /* Wait all RCU readers */
-  
+
+  synchronize_rcu();                                /* Wait all RCU readers */
+
   kfree(finfo);
   kfree(new_fops);
   FAS_DEBUG("fas_file_release: successfully released memory");

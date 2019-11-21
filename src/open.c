@@ -1,16 +1,24 @@
 #include "fas_private.h"
 
-int fas_ioctl_open(char *filename, int flags, mode_t mode) {
+int fas_ioctl_open(char *filename, int flags) {
 
   int r;
 
-  FAS_DEBUG("fas_ioctl_open: %s, %x, %x", filename, flags, mode);
+  FAS_DEBUG("fas_ioctl_open: (%p) %s, %x", filename, filename, flags);
 
-  /* Session temporary files are not a thing. For O_PATH use regular open() */
-  if (flags & (O_TMPFILE | O_PATH)) return -EINVAL;
+  /* Session temporary files are not a thing. For O_PATH use regular open().
+     We don't allow creation of files with fas_open, see the DOCS. */
+  if (flags & (O_TMPFILE | O_PATH | O_CREAT)) return -EINVAL;
 
-  // TODO use filp path to avoid race
-  if (!fas_is_subpath(fas_initial_path, filename, 1)) return -EINVAL;
+  struct path i_path;
+  if (kern_path(fas_initial_path, 0, &i_path)) {
+
+    FAS_WARN(
+        "fas_ioctl_open: the FAS initial path is not a valid path, please "
+        "change it writing in /sys/kernel/fas/initial_path");
+    return -EINVAL;
+
+  }
 
   struct file *a_filp = NULL;
   mm_segment_t oldfs;
@@ -28,14 +36,23 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   oldfs = get_fs();
   set_fs(KERNEL_DS);
-  a_filp = filp_open(filename, a_flags, mode);
+  a_filp = filp_open(filename, a_flags, 0);
   set_fs(oldfs);
 
-  FAS_DEBUG("fas_ioctl_open: a_filp = %p", a_filp);
+  FAS_DEBUG("fas_ioctl_open: a_filp = %p, %x", a_filp, a_flags);
   if (IS_ERR(a_filp)) {
 
+    FAS_DEBUG("fas_ioctl_open: failed to open a_filp");
     r = PTR_ERR(a_filp);
     goto error1_session_open;
+
+  }
+
+  if (!fas_is_subpath(&i_path, &a_filp->f_path)) {
+
+    FAS_DEBUG("fas_ioctl_open: not a subpath of initial_path!");
+    r = -EINVAL;
+    goto error2_session_open;
 
   }
 
@@ -48,6 +65,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   FAS_DEBUG("fas_ioctl_open: b_filp = %p", b_filp);
   if (IS_ERR(b_filp)) {
 
+    FAS_DEBUG("fas_ioctl_open: failed to open b_filp");
     r = PTR_ERR(b_filp);
     goto error2_session_open;
 
@@ -70,7 +88,7 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   memmove(finfo->pathname, out_pathname, strlen(out_pathname) + 1);
 
   finfo->orig_f_op = (struct file_operations *)b_filp->f_op;
-  finfo->flags = a_flags & ~(O_CREAT | O_EXCL);
+  finfo->flags = a_flags & ~(O_EXCL);
   finfo->is_w = (is_w != 0);
 
   FAS_DEBUG("fas_ioctl_open: generated finfo = %p", finfo);
@@ -91,13 +109,17 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   FAS_DEBUG("fas_ioctl_open: new_fops = %p", new_fops);
 
+  write_lock(&fas_files_tree_lock);
   if (radix_tree_insert(&fas_files_tree, (unsigned long)b_filp, finfo) < 0) {
+
+    write_unlock(&fas_files_tree_lock);
 
     kfree(new_fops);
     r = -ENOMEM;
     goto error4_session_open;
 
   }
+  write_unlock(&fas_files_tree_lock);
 
   memcpy(new_fops, b_filp->f_op, sizeof(struct file_operations));
 
@@ -124,6 +146,10 @@ error2_session_open:
   filp_close(a_filp, NULL);
 error1_session_open:
   put_unused_fd(fd);
+  path_put(&i_path);
+
+  FAS_DEBUG("fas_ioctl_open: exit error = %d", r);
+
   return r;
 
 }

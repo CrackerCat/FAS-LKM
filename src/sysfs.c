@@ -19,6 +19,7 @@ ssize_t fas_intial_path_store(struct kobject *kobj, struct kobj_attribute *attr,
   size_t size = count;
   if (count > PATH_MAX) size = PATH_MAX;
 
+  memset(fas_initial_path, 0, PATH_MAX);
   strncpy(fas_initial_path, buf, size);
 
   size = strlen(fas_initial_path);
@@ -26,6 +27,17 @@ ssize_t fas_intial_path_store(struct kobject *kobj, struct kobj_attribute *attr,
     --size;
 
   fas_initial_path[size] = 0;
+
+  struct path i_path;
+  if (kern_path(fas_initial_path, 0, &i_path)) {
+
+    FAS_WARN(
+        "fas_intial_path_store: the inserted FAS initial path (%s) is not a "
+        "valid "
+        "path, please retry inserting a valid path",
+        fas_initial_path);
+
+  }
 
   return count;
 
@@ -108,15 +120,19 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
   char   path_buf[PATH_MAX];
 
   int i = 0;
-  
+
   radix_tree_for_each_slot(slot, &fas_files_tree, &iter, 0) {
 
+    read_lock(&fas_files_tree_lock);
     rcu_read_lock();
+
     struct fas_filp_info *finfo = radix_tree_deref_slot(slot);
     if (finfo != NULL)
       memcpy(path_buf, finfo->pathname, PATH_MAX);
+
     rcu_read_unlock();
-    
+    read_unlock(&fas_files_tree_lock);
+
     if (finfo == NULL) continue;
 
     int key = fas_key_hash(path_buf);
@@ -144,8 +160,6 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
     }
 
   }
-  
-  rcu_read_unlock();
 
   int bkt;
   hash_for_each(table->ht, bkt, entry, node) {
@@ -182,34 +196,51 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
   char                name_buf[PATH_MAX];
 
   int i = 0;
+  
+  struct files_struct * (*f_get_files_struct)(struct task_struct *) = (void*)kallsyms_lookup_name("get_files_struct");
+  void (*f_put_files_struct)(struct files_struct *) = (void*)kallsyms_lookup_name("put_files_struct");
+
+  if (f_get_files_struct == NULL || f_put_files_struct == NULL) {
+    return snprintf(buf, PAGE_SIZE, " **** kallsyms not enabled on this kernel build ***\n");
+  }
 
   rcu_read_lock();
-  for_each_process(t) {
-    rcu_read_unlock();
+  for_each_process(t) { /* Basically this is a list_entry_rcu */
 
-    if (t->files == NULL) continue;
+    rcu_read_unlock();
+    
+    struct files_struct *files = f_get_files_struct(t);
+
+    if (files == NULL) continue;
 
     int fd;
     int use_sessions = 0;
 
-    rcu_read_lock();
-    struct fdtable *fdt = files_fdtable(t->files);
-
+    struct fdtable *fdt = files_fdtable(files);
+  
+    spin_lock(&files->file_lock);
     for (fd = 0; fd < fdt->max_fds; ++fd) {
 
       if (fdt->fd[fd] == NULL) continue;
 
-      /* rcu_read_lock already set */
+      rcu_read_lock();
       struct fas_filp_info *finfo =
           radix_tree_lookup(&fas_files_tree, (unsigned long)fdt->fd[fd]);
+      rcu_read_unlock();
 
+      /* finfo is only used here. We choosed to avoid locking in order to not
+         decrease performance. In the unlikely case that finfo is freed
+         between the radix_tree_lookup() call and this statement a simple
+         pointer comparison will not affect the state of the kernel. */
       if (finfo == NULL) continue;
 
       use_sessions = 1;
       break;
 
     }
-    rcu_read_unlock();
+    spin_unlock(&files->file_lock);
+
+    f_put_files_struct(files);
 
     if (use_sessions) {
 
@@ -233,7 +264,9 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
     }
 
     rcu_read_lock();
+
   }
+
   rcu_read_unlock();
 
 exit_list_procs:

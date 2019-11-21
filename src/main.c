@@ -11,6 +11,9 @@ struct device *fas_device;
 struct radix_tree_root fas_files_tree;
 EXPORT_SYMBOL(fas_files_tree);
 
+DEFINE_RWLOCK(fas_files_tree_lock);
+EXPORT_SYMBOL(fas_files_tree_lock);
+
 struct kobject *fas_kobj;
 
 static struct kobj_attribute fas_initial_path_attribute =
@@ -63,6 +66,34 @@ static struct file_operations dev_fops = {
     .unlocked_ioctl = fas_dev_ioctl,
 
 };
+
+long fas_dev_ioctl(struct file *filep, unsigned int cmd, unsigned long arg) {
+
+  switch (cmd) {
+
+    case FAS_IOCTL_NOP: break;
+
+    case FAS_IOCTL_OPEN: {
+
+      struct fas_open_args open_args;
+      if (copy_from_user(&open_args, (void *)arg, sizeof(struct fas_open_args)))
+        return -EINVAL;
+
+      /* Ensure NUL termination */
+      open_args.pathname[PATH_MAX - 1] = 0;
+
+      return fas_ioctl_open(open_args.pathname, open_args.flags);
+      break;
+
+    }
+
+  }
+
+  return 0;
+
+}
+
+EXPORT_SYMBOL(fas_dev_ioctl);
 
 static int __init fas_init(void) {
 
