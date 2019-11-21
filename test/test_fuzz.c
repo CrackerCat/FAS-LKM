@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <time.h>
@@ -22,8 +23,11 @@
     - fds stack
 */
 
+// undefine thsi to run FUZZ_ITERATIONS times only
+#define FUZZ_FOREVAH 1
+
 #define THREADS_NUM 8
-#define FUZZ_ITERATIONS 10000000
+#define FUZZ_ITERATIONS 1000000
 
 struct fd_node {
 
@@ -100,8 +104,6 @@ static char* sysfs_filenames_roster[SYSFS_FILENAMES_ROSTER_SIZE] = {
 
 };
 
-#define NUM_ACTIONS 7
-
 static char* A_get_filename() {
 
   return filenames_roster[rand() % FILENAMES_ROSTER_SIZE];
@@ -122,22 +124,36 @@ static int A_open_rdonly(char* filename) {
 
 static int A_open_rw(char* filename) {
 
-  return fas_open(filename, O_RDWR | O_CREAT, 0);
+  return fas_open(filename, O_RDWR, 0);
 
 }
 
 static int A_unlink(char* filename) {
 
-  return unlink(filename);
+  int r = unlink(filename);
+  int fd = open(filename, O_CREAT | O_WRONLY, 0777);
+  if (fd > 0) close(fd);
+  return r;
 
 }
 
-#define MAX_WRITE_SIZE 1000
+#define MAX_WRITE_SIZE 12
 static int A_write(int fd) {
 
   size_t size = rand() % MAX_WRITE_SIZE;
   char*  buf = malloc(size);
   int    r = write(fd, buf, size);
+  free(buf);
+  return r;
+
+}
+
+#define MAX_WRITE_SIZE 12
+static int A_read(int fd) {
+
+  size_t size = rand() % MAX_WRITE_SIZE;
+  char*  buf = malloc(size);
+  int    r = read(fd, buf, size);
   free(buf);
   return r;
 
@@ -170,6 +186,7 @@ void do_action(int actid, struct fd_node** fd_stack,
       char* fn = (*filenames_stack)->str;
       *filenames_stack = filename_pop(*filenames_stack);
       int fd = A_open_rw(fn);
+      A_write(fd);
       *fd_stack = fd_push(*fd_stack, fd, 1);
       break;
 
@@ -200,16 +217,14 @@ void do_action(int actid, struct fd_node** fd_stack,
     case 4: {
 
       if (!(*fd_stack)) break;
-      if (!(*fd_stack)->is_w) goto read_action;
       int fd = (*fd_stack)->fd;
-      A_write(fd);
+      A_read(fd);
       break;
 
     }
 
-    case 5: {
+    case 5 ... 6: { // more probability to close
 
-    read_action:
       if (!(*fd_stack)) break;
       int fd = (*fd_stack)->fd;
       *fd_stack = fd_pop(*fd_stack);
@@ -218,7 +233,7 @@ void do_action(int actid, struct fd_node** fd_stack,
 
     }
 
-    case 6: {
+    case 7: {
 
       *filenames_stack =
           filename_push(*filenames_stack, A_get_sysfs_filename(), 0);
@@ -230,6 +245,8 @@ void do_action(int actid, struct fd_node** fd_stack,
 
 }
 
+#define NUM_ACTIONS 8
+
 void* fuzz(void* __a) {
 
   srand(time(NULL));
@@ -237,15 +254,19 @@ void* fuzz(void* __a) {
   struct filename_node* filenames_stack = NULL;
 
   int i = 0;
+#ifndef FUZZ_FOREVAH
   while (i < FUZZ_ITERATIONS) {
+#else
+  while (1) {
+#endif
 
     do_action(rand() % NUM_ACTIONS, &fd_stack, &filenames_stack);
-    ++i;
-    if (i % 100000 == 0) {
+    if (i % 1000 == 0) {
 
-      fprintf(stderr, "[%ld] iteration #%d\n", syscall(__NR_gettid), i);
+      fprintf(stderr, "[%ld] iteration #%d (%p, %p)\n", syscall(__NR_gettid), i, fd_stack, filenames_stack);
 
     }
+    ++i;
 
   }
 
@@ -253,13 +274,31 @@ void* fuzz(void* __a) {
 
 }
 
+void pipe_handler(int s) {
+  fprintf(stderr, "SIGPIPE\n");
+}
+
 int main() {
 
   fas_init();
 
+  //signal(SIGPIPE, pipe_handler);
+  signal(SIGPIPE, SIG_IGN);
+  
   pthread_t threads[THREADS_NUM];
 
   int i;
+  for (i = 0; i < FILENAMES_ROSTER_SIZE; ++i) {
+  
+    int fd = open(filenames_roster[i], O_CREAT | O_WRONLY, 0777);
+    if (fd < 0) {
+      fprintf(stderr, "You don't have the ppermissions to write in /tmp, are u kidding?\n");
+      return 1;
+    }
+    close(fd);
+    
+  }
+  
   for (i = 0; i < THREADS_NUM; ++i) {
 
     pthread_create(&threads[i], NULL, &fuzz, NULL);
