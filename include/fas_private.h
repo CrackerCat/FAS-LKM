@@ -26,6 +26,7 @@
 #include <linux/time.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
+#include <linux/semaphore.h>
 
 #include "fas.h"
 
@@ -94,6 +95,7 @@ struct fas_filp_info {
 };
 
 extern struct radix_tree_root fas_files_tree;
+extern rwlock_t fas_files_tree_lock;
 
 extern char fas_initial_path[PATH_MAX];
 
