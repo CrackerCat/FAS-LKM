@@ -48,11 +48,11 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
   }
 
   if (!fas_is_subpath(&i_path, &a_filp->f_path)) {
-  
+
     FAS_DEBUG("fas_ioctl_open: not a subpath of initial_path!");
     r = -EINVAL;
     goto error2_session_open;
-  
+
   }
 
   oldfs = get_fs();

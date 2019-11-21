@@ -14,7 +14,7 @@ int main() {
 
   fd = fas_open("/tmp/pippo.txt", O_RDWR, 0);
   printf("fd: %d\n", fd);
-  
+
   char buf[32] = {0};
   read(fd, buf, 5);
 

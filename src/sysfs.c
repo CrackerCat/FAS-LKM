@@ -27,13 +27,15 @@ ssize_t fas_intial_path_store(struct kobject *kobj, struct kobj_attribute *attr,
     --size;
 
   fas_initial_path[size] = 0;
-  
+
   struct path i_path;
   if (kern_path(fas_initial_path, 0, &i_path)) {
 
     FAS_WARN(
-        "fas_intial_path_store: the inserted FAS initial path (%s) is not a valid "
-        "path, please retry inserting a valid path", fas_initial_path);
+        "fas_intial_path_store: the inserted FAS initial path (%s) is not a "
+        "valid "
+        "path, please retry inserting a valid path",
+        fas_initial_path);
 
   }
 
