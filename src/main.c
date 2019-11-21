@@ -11,6 +11,9 @@ struct device *fas_device;
 struct radix_tree_root fas_files_tree;
 EXPORT_SYMBOL(fas_files_tree);
 
+DEFINE_RWLOCK(fas_files_tree_lock);
+EXPORT_SYMBOL(fas_files_tree_lock);
+
 struct kobject *fas_kobj;
 
 static struct kobj_attribute fas_initial_path_attribute =

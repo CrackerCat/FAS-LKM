@@ -7,10 +7,15 @@ int fas_file_flush(struct file *filep, fl_owner_t id) {
 
   FAS_DEBUG("fas_file_flush: %p", filep);
 
+  /* https://lwn.net/Articles/175432/
+     Flush is an atomic context for the resulting pointer (release is always
+     after and not concurrent) and so RCU only is fine here. */
+  // read_lock(&fas_files_tree_lock);
   rcu_read_lock();
   struct fas_filp_info *finfo =
       radix_tree_lookup(&fas_files_tree, (unsigned long)filep);
   rcu_read_unlock();
+  // read_unlock(&fas_files_tree_lock);
 
   if (finfo == NULL) {                             /* Should *never* happen */
     FAS_FATAL(
@@ -68,8 +73,10 @@ int fas_file_release(struct inode *inodep, struct file *filep) {
   FAS_DEBUG("fas_file_release: %p", filep);
 
   /* Should we use RCU here? Doc says nothing... */
+  write_lock(&fas_files_tree_lock);
   struct fas_filp_info *finfo =
       radix_tree_delete(&fas_files_tree, (unsigned long)filep);
+  write_unlock(&fas_files_tree_lock);
 
   atomic_long_sub(1, &fas_opened_sessions_num);
 

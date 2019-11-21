@@ -6,8 +6,9 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   FAS_DEBUG("fas_ioctl_open: (%p) %s, %x, %x", filename, filename, flags, mode);
 
-  /* Session temporary files are not a thing. For O_PATH use regular open() */
-  if (flags & (O_TMPFILE | O_PATH)) return -EINVAL;
+  /* Session temporary files are not a thing. For O_PATH use regular open().
+     We don't allow creation of files with fas_open, see the DOCS. */
+  if (flags & (O_TMPFILE | O_PATH | O_CREAT)) return -EINVAL;
 
   struct path i_path;
   if (kern_path(fas_initial_path, 0, &i_path)) {
@@ -108,13 +109,17 @@ int fas_ioctl_open(char *filename, int flags, mode_t mode) {
 
   FAS_DEBUG("fas_ioctl_open: new_fops = %p", new_fops);
 
+  write_lock(&fas_files_tree_lock);
   if (radix_tree_insert(&fas_files_tree, (unsigned long)b_filp, finfo) < 0) {
+
+    write_unlock(&fas_files_tree_lock);
 
     kfree(new_fops);
     r = -ENOMEM;
     goto error4_session_open;
 
   }
+  write_unlock(&fas_files_tree_lock);
 
   memcpy(new_fops, b_filp->f_op, sizeof(struct file_operations));
 
