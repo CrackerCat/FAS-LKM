@@ -7,7 +7,7 @@
 
 int main() {
 
-  int fd = creat("/tmp/pippo.txt", O_WRONLY);
+  int fd = open("/tmp/pippo.txt", O_CREAT | O_WRONLY, 0777);
   write(fd, "pippo", 5);
   close(fd);
 

@@ -8,6 +8,8 @@ LIB_PATH ?= ../libfas/
 CFLAGS ?= -g -O0
 CFLAGS += -I$(HDR_PATH) -Wall -D_FORTIFY_SOURCE=2 -Wno-pointer-sign
 
+LDFLAGS ?= -pthread
+
 COMMON_HDR = $(HDR_PATH)fas.h
 
 all: $(BINS)
