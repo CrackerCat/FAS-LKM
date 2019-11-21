@@ -148,6 +148,8 @@ error1_session_open:
   put_unused_fd(fd);
   path_put(&i_path);
 
+  FAS_DEBUG("fas_ioctl_open: exit error = %d", r);
+
   return r;
 
 }
