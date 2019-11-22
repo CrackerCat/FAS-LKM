@@ -22,7 +22,7 @@ only by the instance itself.
 The changes are then flushed to the resource when the session is closed in a
 way similar in spirit to the commit of a transaction in a database system.
 
-We implemented a Linux Kernel Module (LKM) that enable the userspace to use
+I implemented a Linux Kernel Module (LKM) that enable the userspace to use
 FAS on files inside an user-specified directory and its sub-directories. 
 
 2) User Space
@@ -132,6 +132,32 @@ parallel usage of the returned fas_filp_info instance.
 4) Kernel-Level Subsystem Implementation
 ========================================
 
+The documentation is the code. Really, the code is always better, but I'll
+provide some bits here.
+
+As shown before, fas_open is called using the /dev/fas device. This device
+has a custom file_operations table with the fas_dev_ioctl routine address
+in the unlocked_ioctl field.
+
+fas_dev_ioctl has only one available ioctl code, FAS_IOCTL_OPEN, associated to
+the fas_ioctl_open routine, the actual implementation of fas_open in kernel
+space. fas_dev_ioctl also manages the copy of the arguments from userspace for
+fas_ioctl_open using copy_from_user().
+
+fas_ioctl_open firstly checks that the provided pathname is a subpath of the
+initial_path, if the initial_path really exists and if the provided flags
+are compatible with the specification.
+Then, it calls filp_open for the target pathname, check if the opened file is
+a regular file or a link and calls filp_open creating a tempfile in
+initial_path. This means that, if the current user has not the permission
+to create a file in initial_path, the routine will fail with EPERM.
+
+Then, it creates and fills a fas_filp_info instance and replaces the f_op field
+of the tempfile with a custom table that has fas_file_flush and
+fas_file_release in place of the standard flush and release fields.
+That fas_filp_finfo in atomically inserted in the radix tree and the number
+of open sessions is atomically incremented (atomic_long_t).
+
 
 
 5) Testcases
@@ -145,12 +171,12 @@ in the test/ folder:
  - test_open.bin:
    test fas_open writing on a session file and fas_open with the O_APPEND flag.
 
-- test_sigpipe.bin:
-  test if the module is tolerant to an unlinked original file while a session
-  is opened.
+ - test_sigpipe.bin:
+   test if the module is tolerant to an unlinked original file while a session
+   is opened.
 
-- test_multisessions.bin:
-  test the duplication of a session via fork(2).
+ - test_multisessions.bin:
+   test the duplication of a session via fork(2).
 
 These integrity tests are far from being complete and cannot cover corner
 cases and weird conditions that are the real source of bugs.
@@ -168,27 +194,27 @@ Unlike modern Coverage Guided Fuzzers for kernel code like [2] [3], our simple
 test is black box and does not need the coverage feedback to stress the module
 due to the small size of the current FAS implementation (~800 LOC).
 
-Using this simple fuzzer we discovered a deadlock caused by a race condition
+Using this simple fuzzer I discovered a deadlock caused by a race condition
 between fas_ioctl_open and fas_file_release and a bug in the fas_filp_copy
 utility functions created by a typo in the code.
 
-After fixing all bugs dicovered using the fuzzer, we re-ran the fuzzer for
+After fixing all bugs dicovered using the fuzzer, I re-ran the fuzzer for
 almost 3 hours without having crashes, deadlocks or weird states (that are
 detected in the module using integrity checks at runtime and reported to the
 user via dmesg).
 While this is not a proof for a bug-free module, this test suggests that our
 module is not affected by superficial bugs.
 
-The last testcase that we used is not a real testcase: it's bash.
-We created a share dobject (test_preloader.bin) that has to be preloaded in
+The last testcase that I used is not a real testcase: it's bash.
+I created a share dobject (test_preloader.bin) that has to be preloaded in
 a target application via LD_PRELOAD (like [4]). This module forces the loader
 to resolve the open symbol not with the libc routine but with a custom open.
 This custom open fallbacks the libc open when the target file is not a regular
 or link file or when at least one of the usupported flags by fas_open is used.
 In all the other cases, the custom open is a proxy to fas_open.
 
-We preloaded such module into bash after setting the intiial_path to /.
-We used this shell for a while without having problems.
+I preloaded such module into bash after setting the intiial_path to /.
+I used this shell for a while without having problems.
 
 6) References
 =============
