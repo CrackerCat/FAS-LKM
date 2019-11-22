@@ -34,7 +34,7 @@ int open(const char *pathname, int flags, ...) {
   struct stat info;
   stat(pathname, &info);
   
-  if (S_ISCHR(info.st_mode) || S_ISBLK(info.st_mode) || (flags & (O_CREAT | O_PATH | O_TMPFILE))) {
+  if (!(S_ISREG(info.st_mode) || S_ISLNK(info.st_mode)) || (flags & (O_CREAT | O_PATH | O_TMPFILE))) {
     
     fd = __libc_open(pathname, flags, mode);
     fprintf(stderr, "FAS test_prelaoder: open(%s, %x, %x) = %d\n", pathname, flags, mode, fd);
