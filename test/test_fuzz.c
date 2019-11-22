@@ -301,7 +301,7 @@ int main() {
 
       fprintf(
           stderr,
-          "You don't have the ppermissions to write in /tmp, are u kidding?\n");
+          "You don't have the permissions to write in /tmp, are u kidding?\n");
       return 1;
 
     }

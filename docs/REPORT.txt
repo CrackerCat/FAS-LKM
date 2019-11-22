@@ -11,11 +11,11 @@
 ===============
 
 The File Access with Session (FAS) is a method to handle files in the operating
-system in which processes does not have to compete for the I/O on a file.
+system in which processes do not have to compete for the I/O on a file.
 
 In standard POSIX files, each I/O session on a resource is concurrent with
-others and the involved processe has to ensure the consistency using a
-synchronization meachanism and/or permissions.
+others and the involved processes have to ensure the consistency using a
+synchronization mechanism and/or permissions.
 
 Using FAS, each instance has a temporary view of the file that can be modified
 only by the instance itself.
@@ -23,7 +23,7 @@ The changes are then flushed to the resource when the session is closed in a
 way similar in spirit to the commit of a transaction in a database system.
 
 I implemented a Linux Kernel Module (LKM) that enable the userspace to use
-FAS on files inside an user-specified directory and its sub-directories. 
+FAS on files inside a user-specified directory and its sub-directories. 
 
 2) User Space
 =============
@@ -44,11 +44,11 @@ Use it behaves like POSIX open but with some limitations.
 
 The following flags are not supported:
  - O_CREAT, use open(2) to create a file
- - O_PATH, it ouside the scope of the prject, use open(2) for it
+ - O_PATH, it outside the scope of the project, use open(2) for it
  - O_TMPFILE, because a temporary session file has no sense
 
-fas_open can only operates on REG and LNK files, it fails when pathname
-refers to a device or to a socket for example. The nature of a session file
+fas_open can only operate on REG and LNK files, it fails when the pathname
+refers to a device or a socket for example. The nature of a session file
 is incompatible with special files (e.g. fas_open(/dev/urandom, ...) would
 result into an infinite loop in the kernel that fill-ups your disk with
 random data if fas_open would be allowed to operate on such files).
@@ -82,31 +82,31 @@ break the program assumptions exploiting the TOCTOU between fas_open and close:
 
 A close that does not check again the flags of the original file will write the
 content of user_controlled_data into "bad_guy". Actually, flags are checked
-and in this example SIGPIPE is raised and the commit operation blocked.
+and in this example, SIGPIPE is raised and the commit operation blocked.
 
 2.2) SysFS
 ----------
 
-An user can get and set the FAS initial path (i.e. only the failes in subpaths
+A user can get and set the FAS initial path (i.e. only the files in subpaths
 of the initial path can be opened with fas_open) reading and writing to
 /sys/kernel/fas/initial_path.
 
-Reading /sys/kernel/fas/sessions_num an user can get the number of opened
+Reading /sys/kernel/fas/sessions_num a user can get the number of open
 session files in the entire OS.
 
 Reading /sys/kernel/fas/sessions_each_file an user can know how many sessions
-are opened for each file that has at least one opened session.
+are open for each file that has at least one opened session.
 Each file is a line in the output, each line is in the format
 <filename> <number of sessions>
 
-Reading /sys/kernel/fas/processes an user can know which processes are using
+Reading /sys/kernel/fas/processes a user can know which processes are using
 session files. Each line refers to a process and has the format
 <process image filename> <pid>
 
 3) Kernel-Level Data Structures
 ===============================
 
-The FAS kernel module havily makes use of a Radix Tree [1]. Each key is a
+The FAS kernel module heavily makes use of a Radix Tree [1]. Each key is a
 struct file instance of a session. The tree maps the session files to a
 struct fas_filp_info instance, a structure defines as follows:
 
@@ -126,7 +126,7 @@ pathname is the pathname of the original file. flags are the flags passed
 to fas_open and is_w tells if the close operation has to commit the changes
 to the original file.
 
-The concurrent accesses to the Radix Tree are governed by an rwlock_t to allow
+The concurrent accesses to the Radix Tree are governed by a rwlock_t to allow
 parallel usage of the returned fas_filp_info instance.
 
 4) Kernel-Level Subsystem Implementation
@@ -135,17 +135,23 @@ parallel usage of the returned fas_filp_info instance.
 The documentation is the code. Really, the code is always better, but I'll
 provide some bits here.
 
+4.1) IOCTL interface
+--------------------
+
 As shown before, fas_open is called using the /dev/fas device. This device
 has a custom file_operations table with the fas_dev_ioctl routine address
 in the unlocked_ioctl field.
 
-fas_dev_ioctl has only one available ioctl code, FAS_IOCTL_OPEN, associated to
-the fas_ioctl_open routine, the actual implementation of fas_open in kernel
-space. fas_dev_ioctl also manages the copy of the arguments from userspace for
-fas_ioctl_open using copy_from_user().
+fas_dev_ioctl has only one available ioctl code, FAS_IOCTL_OPEN, associated
+with the fas_ioctl_open routine, the actual implementation of fas_open in
+kernel space. fas_dev_ioctl also manages the copy of the arguments from
+userspace for fas_ioctl_open using copy_from_user().
+
+4.2) File-related routines
+--------------------------
 
 fas_ioctl_open firstly checks that the provided pathname is a subpath of the
-initial_path, if the initial_path really exists and if the provided flags
+initial_path, if the initial_path exists and if the provided flags
 are compatible with the specification.
 Then, it calls filp_open for the target pathname, check if the opened file is
 a regular file or a link and calls filp_open creating a tempfile in
@@ -158,33 +164,45 @@ fas_file_release in place of the standard flush and release fields.
 That fas_filp_finfo in atomically inserted in the radix tree and the number
 of open sessions is atomically incremented (atomic_long_t).
 
------ talk about flush & release here
+fas_file_flush lookups the radix tree for the corresponding fas_filp_info,
+writes the changes to the original file (and raise SIGPIPE if the original file
+cannot be reopened). In the end, it calls the original flush function stored in
+the fas_filp_info if available.
+
+fas_file_release clean all the resources associated to the session file that
+has reched the end of the journey. Firstly, it deletes the corresponding entry
+of the radix tree under a write lock. Then, it atomically decrements the number
+of open session files. The memory associated to the fas_filp_info is released
+and the original release function is called, if avaliable.
+
+4.3) SysFS-related routines
+---------------------------
 
 The sysfs interface is implemented using 5 routines.
 fas_initial_path_show and fas_initial_path_store to read and write the
 initial_path from userspace.
-fas_sessions_num_show to read the number of current opened sessions.
+fas_sessions_num_show to read the number of currently opened sessions.
 
 fas_sessions_each_file_show is used to read the number of sessions for each
-file that has at leat one opened session.
-In ushc routine, a complete walk of the radix tree is performed. This is a
+file that has at least one opened session.
+In such a routine, a complete walk of the radix tree is performed. This is a
 critical operation that requires both read locks and RCU read when doing
 the lookup and dereference of each node. In order to have a critical section
 as small as possible, when a fas_filp_info is grabbed from the tree the
 corresponding filename is copied into a local buffer and the locks are
 released just after this operation.
 To keep track of the number of opened sessions for each file, the routine
-uses a dynamically allocated hastable.
+uses a dynamically allocated hashtable.
 Each filename is a key that maps to a counter. Every time that a fas_filp_info
 is taken from the tree the corresponding counter is incremented.
 
 The last sysfs-related routine is fas_processes_show.
-In this function there is another critical statement, a loop over all the
+In this function, there is another critical statement, a loop over all the
 task structs. This loop basically does a list_entry_rcu on the list of the
 task every iteration so an RCU lock is held.
 For each task, get_files_struct and then files_fdtable are used to retrieve the
 fdtable. While holding the file_lock of the fdtable, for each fd there is
-a radix tree lookup in order to know if at leat one fd for the task is a
+a radix tree lookup to know if at least one fd for the task is a
 session file.
 If this last condition is true, the process name and pid is added to the
 output buffer.
@@ -192,7 +210,7 @@ output buffer.
 5) Testcases
 ============
 
-The userspace API are used to test the module in different ways.
+The userspace API is used to test the module in different ways.
 
 The first, a simple correctness test, is done running the following binaries
 in the test/ folder:
@@ -215,8 +233,8 @@ tested against unexpected inputs and stresses in a negative way.
 A common negative test employed nowadays is random fuzz testing.
 The test_fuzz.bin in the test/ folder generates a random chain of actions on
 session files concurrently executed by 8 threads.
-It stress almost all the code of the subsystem (also the code related to sysfs
-because it may be in race condition with fas_ioctl_open, fas_file_flush and
+It stresses almost all the code of the subsystem (also the code related to sysfs
+because it may be in a race condition with fas_ioctl_open, fas_file_flush and
 fas_file_release).
 When an action is generated, it uses the data produced by previously executed
 actions in a consistent way, like in syzkaller [2].
@@ -228,7 +246,7 @@ Using this simple fuzzer I discovered a deadlock caused by a race condition
 between fas_ioctl_open and fas_file_release and a bug in the fas_filp_copy
 utility functions created by a typo in the code.
 
-After fixing all bugs dicovered using the fuzzer, I re-ran the fuzzer for
+After fixing all bugs discovered using the fuzzer, I re-ran the fuzzer for
 almost 3 hours without having crashes, deadlocks or weird states (that are
 detected in the module using integrity checks at runtime and reported to the
 user via dmesg).
@@ -236,14 +254,14 @@ While this is not a proof for a bug-free module, this test suggests that our
 module is not affected by superficial bugs.
 
 The last testcase that I used is not a real testcase: it's bash.
-I created a share dobject (test_preloader.bin) that has to be preloaded in
+I created a share object (test_preloader.bin) that has to be preloaded in
 a target application via LD_PRELOAD (like [4]). This module forces the loader
 to resolve the open symbol not with the libc routine but with a custom open.
 This custom open fallbacks the libc open when the target file is not a regular
-or link file or when at least one of the usupported flags by fas_open is used.
+or link file or when at least one of the unsupported flags by fas_open is used.
 In all the other cases, the custom open is a proxy to fas_open.
 
-I preloaded such module into bash after setting the intiial_path to /.
+I preloaded such a module into bash after setting the intiial_path to /.
 I used this shell for a while without having problems.
 
 6) References
