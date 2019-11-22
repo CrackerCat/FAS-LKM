@@ -47,14 +47,16 @@ int fas_ioctl_open(char *filename, int flags) {
     goto error1_session_open;
 
   }
-  
+
   umode_t a_mode = a_filp->f_inode->i_mode;
   if (!S_ISLNK(a_mode) && !S_ISREG(a_mode)) {
-  
-    FAS_DEBUG("fas_ioctl_open: session open on not regular or link files is harmful! blocked.");
+
+    FAS_DEBUG(
+        "fas_ioctl_open: session open on not regular or link files is harmful! "
+        "blocked.");
     r = -EPERM;
     goto error2_session_open;
-  
+
   }
 
   if (!fas_is_subpath(&i_path, &a_filp->f_path)) {
@@ -66,13 +68,11 @@ int fas_ioctl_open(char *filename, int flags) {
   }
 
   int b_flags = O_TMPFILE | O_EXCL | O_RDWR;
-  if (a_flags & O_APPEND)
-    b_flags |= O_APPEND;
+  if (a_flags & O_APPEND) b_flags |= O_APPEND;
 
   oldfs = get_fs();
   set_fs(KERNEL_DS);
-  struct file *b_filp =
-      filp_open(fas_initial_path, b_flags, 0644);
+  struct file *b_filp = filp_open(fas_initial_path, b_flags, 0644);
   set_fs(oldfs);
 
   FAS_DEBUG("fas_ioctl_open: b_filp = %p", b_filp);
@@ -132,6 +132,7 @@ int fas_ioctl_open(char *filename, int flags) {
     goto error4_session_open;
 
   }
+
   write_unlock(&fas_files_tree_lock);
 
   memcpy(new_fops, b_filp->f_op, sizeof(struct file_operations));

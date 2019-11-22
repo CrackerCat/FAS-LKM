@@ -10,20 +10,20 @@ int fas_filp_copy(struct file* src, struct file* dst) {
   unsigned long long n;
 
   while (1) {
-    
+
     unsigned long long o_i = i;
 
     r = kernel_read(src, buf, 512, &i);
 
     if (r <= 0) break;
-    
+
     n = i - o_i;
 
     FAS_DEBUG("fas_filp_copy: readed %llu bytes:", n);
     FAS_DEBUG_HEXDUMP(buf, n);
 
-    for (k = 0; k < n; ) {
-    
+    for (k = 0; k < n;) {
+
       unsigned long long o_j = j;
 
       r = kernel_write(dst, buf + k, n - k, &j);

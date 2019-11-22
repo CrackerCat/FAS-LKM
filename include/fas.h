@@ -11,8 +11,8 @@
 
 struct fas_open_args {
 
-  char   pathname[PATH_MAX];
-  int    flags;
+  char pathname[PATH_MAX];
+  int  flags;
 
 };
 

@@ -1,9 +1,8 @@
-#include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "libfas.h"
-
 
 int main() {
 
@@ -25,19 +24,19 @@ int main() {
   printf("r: %d\n", r);
 
   close(fd);
-  
+
   fd = fas_open("/tmp/pippo.txt", O_RDWR | O_APPEND);
   printf("append fd: %d\n", fd);
-  
+
   bzero(buf, 32);
   read(fd, buf, 32);
   printf("buf: %s\n", buf);
 
   r = write(fd, " linux", 6);
   printf("r: %d\n", r);
-  
+
   close(fd);
-  
+
   fd = open("/tmp/pippo.txt", O_RDONLY);
   bzero(buf, 32);
   read(fd, buf, 32);
