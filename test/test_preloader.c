@@ -1,18 +1,15 @@
 #define _GNU_SOURCE
-#include <stdio.h>
-#include <fcntl.h>
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
-#include "libfas.h"
 #include "fas.h"
+#include "libfas.h"
 
 int (*__libc_open)(const char *__file, int __oflag, ...);
 
-int __fas_initializated;
-
-__attribute__((constructor))
-static void __init() {
+__attribute__((constructor)) static void __init() {
 
   __libc_open = dlsym(RTLD_NEXT, "open");
   fas_init();
@@ -22,8 +19,8 @@ static void __init() {
 int open(const char *pathname, int flags, ...) {
 
   mode_t mode = 0;
-  int fd;
-  
+  int    fd;
+
   if (flags & (O_CREAT | O_TMPFILE)) {
 
     va_list arg;
@@ -32,22 +29,22 @@ int open(const char *pathname, int flags, ...) {
     va_end(arg);
 
   }
-  
-  if (!__fas_initializated && !strcmp(FAS_FILE_NAME, pathname)) {
-  
-    __fas_initializated = 1;
+
+  struct stat info;
+  stat(pathname, &info);
+
+  if (!(S_ISREG(info.st_mode) || S_ISLNK(info.st_mode)) ||
+      (flags & (O_CREAT | O_PATH | O_TMPFILE))) {
+
     fd = __libc_open(pathname, flags, mode);
-    fprintf(stderr, "FAS test_prelaoder: fas_init() = %d\n", fd);
-  
-  } else if (flags & (O_CREAT | O_PATH | O_TMPFILE)) {
-    
-    fd = __libc_open(pathname, flags, mode);
-    fprintf(stderr, "FAS test_prelaoder: open(%s, %x, %x) = %d\n", pathname, flags, mode, fd);
+    fprintf(stderr, "FAS test_prelaoder: open(%s, %x, %x) = %d\n", pathname,
+            flags, mode, fd);
 
   } else {
-  
+
     fd = fas_open(pathname, flags);
-    fprintf(stderr, "FAS test_prelaoder: fas_open(%s, %x) = %d\n", pathname, flags, fd);
+    fprintf(stderr, "FAS test_prelaoder: fas_open(%s, %x) = %d\n", pathname,
+            flags, fd);
 
   }
 

@@ -3,7 +3,7 @@
 
 #include <linux/limits.h>
 
-#define FAS_VERSION "0.8"
+#define FAS_VERSION "0.9"
 
 #define FAS_FILE_NAME "/dev/fas"
 
@@ -11,8 +11,8 @@
 
 struct fas_open_args {
 
-  char   pathname[PATH_MAX];
-  int    flags;
+  char pathname[PATH_MAX];
+  int  flags;
 
 };
 

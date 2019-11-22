@@ -1,9 +1,9 @@
 #include <fcntl.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <signal.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <time.h>
@@ -223,7 +223,7 @@ void do_action(int actid, struct fd_node** fd_stack,
 
     }
 
-    case 5 ... 6: { // more probability to close
+    case 5 ... 6: {  // more probability to close
 
       if (!(*fd_stack)) break;
       int fd = (*fd_stack)->fd;
@@ -256,16 +256,20 @@ void* fuzz(void* __a) {
   int i = 0;
 #ifndef FUZZ_FOREVAH
   while (i < FUZZ_ITERATIONS) {
+
 #else
   while (1) {
+
 #endif
 
     do_action(rand() % NUM_ACTIONS, &fd_stack, &filenames_stack);
     if (i % 1000 == 0) {
 
-      fprintf(stderr, "[%ld] iteration #%d (%p, %p)\n", syscall(__NR_gettid), i, fd_stack, filenames_stack);
+      fprintf(stderr, "[%ld] iteration #%d (%p, %p)\n", syscall(__NR_gettid), i,
+              fd_stack, filenames_stack);
 
     }
+
     ++i;
 
   }
@@ -275,30 +279,37 @@ void* fuzz(void* __a) {
 }
 
 void pipe_handler(int s) {
+
   fprintf(stderr, "SIGPIPE\n");
+
 }
 
 int main() {
 
   fas_init();
 
-  //signal(SIGPIPE, pipe_handler);
+  // signal(SIGPIPE, pipe_handler);
   signal(SIGPIPE, SIG_IGN);
-  
+
   pthread_t threads[THREADS_NUM];
 
   int i;
   for (i = 0; i < FILENAMES_ROSTER_SIZE; ++i) {
-  
+
     int fd = open(filenames_roster[i], O_CREAT | O_WRONLY, 0777);
     if (fd < 0) {
-      fprintf(stderr, "You don't have the ppermissions to write in /tmp, are u kidding?\n");
+
+      fprintf(
+          stderr,
+          "You don't have the ppermissions to write in /tmp, are u kidding?\n");
       return 1;
+
     }
+
     close(fd);
-    
+
   }
-  
+
   for (i = 0; i < THREADS_NUM; ++i) {
 
     pthread_create(&threads[i], NULL, &fuzz, NULL);

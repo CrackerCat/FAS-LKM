@@ -127,8 +127,7 @@ ssize_t fas_sessions_each_file_show(struct kobject *       kobj,
     rcu_read_lock();
 
     struct fas_filp_info *finfo = radix_tree_deref_slot(slot);
-    if (finfo != NULL)
-      memcpy(path_buf, finfo->pathname, PATH_MAX);
+    if (finfo != NULL) memcpy(path_buf, finfo->pathname, PATH_MAX);
 
     rcu_read_unlock();
     read_unlock(&fas_files_tree_lock);
@@ -196,19 +195,24 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
   char                name_buf[PATH_MAX];
 
   int i = 0;
-  
-  struct files_struct * (*f_get_files_struct)(struct task_struct *) = (void*)kallsyms_lookup_name("get_files_struct");
-  void (*f_put_files_struct)(struct files_struct *) = (void*)kallsyms_lookup_name("put_files_struct");
+
+  struct files_struct *(*f_get_files_struct)(struct task_struct *) =
+      (void *)kallsyms_lookup_name("get_files_struct");
+  void (*f_put_files_struct)(struct files_struct *) =
+      (void *)kallsyms_lookup_name("put_files_struct");
 
   if (f_get_files_struct == NULL || f_put_files_struct == NULL) {
-    return snprintf(buf, PAGE_SIZE, " **** kallsyms not enabled on this kernel build ***\n");
+
+    return snprintf(buf, PAGE_SIZE,
+                    " **** kallsyms not enabled on this kernel build ***\n");
+
   }
 
   rcu_read_lock();
-  for_each_process(t) { /* Basically this is a list_entry_rcu */
+  for_each_process(t) {               /* Basically this is a list_entry_rcu */
 
     rcu_read_unlock();
-    
+
     struct files_struct *files = f_get_files_struct(t);
 
     if (files == NULL) continue;
@@ -217,7 +221,7 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
     int use_sessions = 0;
 
     struct fdtable *fdt = files_fdtable(files);
-  
+
     spin_lock(&files->file_lock);
     for (fd = 0; fd < fdt->max_fds; ++fd) {
 
@@ -238,6 +242,7 @@ ssize_t fas_processes_show(struct kobject *kobj, struct kobj_attribute *attr,
       break;
 
     }
+
     spin_unlock(&files->file_lock);
 
     f_put_files_struct(files);
