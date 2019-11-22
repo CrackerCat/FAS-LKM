@@ -2,34 +2,41 @@
 
 int fas_filp_copy(struct file* src, struct file* dst) {
 
-  long               r, n;
+  long               r;
   char               buf[512];
   unsigned long long i = 0;
   unsigned long long j = 0;
+  unsigned long long k = 0;
+  unsigned long long n;
 
   while (1) {
+    
+    unsigned long long o_i = i;
 
-    n = kernel_read(src, buf, 512, &i);
+    r = kernel_read(src, buf, 512, &i);
 
-    if (n <= 0) break;
+    if (r <= 0) break;
+    
+    n = i - o_i;
 
-    FAS_DEBUG("fas_filp_copy: readed %ld bytes:", n);
+    FAS_DEBUG("fas_filp_copy: readed %llu bytes:", n);
     FAS_DEBUG_HEXDUMP(buf, n);
 
-    long k = n;
-    while (k) {
+    for (k = 0; k < n; ) {
+    
+      unsigned long long o_j = j;
 
-      r = kernel_write(dst, buf + j, k, &j);
+      r = kernel_write(dst, buf + k, n - k, &j);
 
       if (r < 0) return r;
 
-      k -= r;
+      k += (j - o_j);
 
     }
 
   }
 
-  if (n < 0) return n;
+  if (r < 0) return r;
   return 0;
 
 }
