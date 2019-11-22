@@ -158,7 +158,36 @@ fas_file_release in place of the standard flush and release fields.
 That fas_filp_finfo in atomically inserted in the radix tree and the number
 of open sessions is atomically incremented (atomic_long_t).
 
+----- talk about flush & release here
 
+The sysfs interface is implemented using 5 routines.
+fas_initial_path_show and fas_initial_path_store to read and write the
+initial_path from userspace.
+fas_sessions_num_show to read the number of current opened sessions.
+
+fas_sessions_each_file_show is used to read the number of sessions for each
+file that has at leat one opened session.
+In ushc routine, a complete walk of the radix tree is performed. This is a
+critical operation that requires both read locks and RCU read when doing
+the lookup and dereference of each node. In order to have a critical section
+as small as possible, when a fas_filp_info is grabbed from the tree the
+corresponding filename is copied into a local buffer and the locks are
+released just after this operation.
+To keep track of the number of opened sessions for each file, the routine
+uses a dynamically allocated hastable.
+Each filename is a key that maps to a counter. Every time that a fas_filp_info
+is taken from the tree the corresponding counter is incremented.
+
+The last sysfs-related routine is fas_processes_show.
+In this function there is another critical statement, a loop over all the
+task structs. This loop basically does a list_entry_rcu on the list of the
+task every iteration so an RCU lock is held.
+For each task, get_files_struct and then files_fdtable are used to retrieve the
+fdtable. While holding the file_lock of the fdtable, for each fd there is
+a radix tree lookup in order to know if at leat one fd for the task is a
+session file.
+If this last condition is true, the process name and pid is added to the
+output buffer.
 
 5) Testcases
 ============
@@ -185,9 +214,10 @@ tested against unexpected inputs and stresses in a negative way.
 
 A common negative test employed nowadays is random fuzz testing.
 The test_fuzz.bin in the test/ folder generates a random chain of actions on
-session files stressing almost all the code of the subsystem (also the
-code related to sysfs cause may be in race condition with fas_ioctl_open,
-fas_file_flush and fas_file_release).
+session files concurrently executed by 8 threads.
+It stress almost all the code of the subsystem (also the code related to sysfs
+because it may be in race condition with fas_ioctl_open, fas_file_flush and
+fas_file_release).
 When an action is generated, it uses the data produced by previously executed
 actions in a consistent way, like in syzkaller [2].
 Unlike modern Coverage Guided Fuzzers for kernel code like [2] [3], our simple
@@ -228,3 +258,4 @@ I used this shell for a while without having problems.
      in proceedings of USENIX Security Symposium, 2017
 
  [4] P. Roszatycki, "fakechroot", https://github.com/dex4er/fakechroot
+
