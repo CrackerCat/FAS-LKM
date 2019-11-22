@@ -9,8 +9,6 @@
 
 int (*__libc_open)(const char *__file, int __oflag, ...);
 
-int __fas_initializated;
-
 __attribute__((constructor))
 static void __init() {
 
@@ -33,13 +31,10 @@ int open(const char *pathname, int flags, ...) {
 
   }
   
-  if (!__fas_initializated && !strcmp(FAS_FILE_NAME, pathname)) {
+  struct stat info;
+  stat(pathname, &info);
   
-    __fas_initializated = 1;
-    fd = __libc_open(pathname, flags, mode);
-    fprintf(stderr, "FAS test_prelaoder: fas_init() = %d\n", fd);
-  
-  } else if (flags & (O_CREAT | O_PATH | O_TMPFILE)) {
+  if (S_ISCHR(info.st_mode) || S_ISBLK(info.st_mode) || (flags & (O_CREAT | O_PATH | O_TMPFILE))) {
     
     fd = __libc_open(pathname, flags, mode);
     fprintf(stderr, "FAS test_prelaoder: open(%s, %x, %x) = %d\n", pathname, flags, mode, fd);
