@@ -29,6 +29,8 @@ $ cd test ; make
 
 To build the test binaries.
 
+The FAS kernel module is known to compile and work for kernel versions >= 5.0.
+
 2) Running
 ----------
 
