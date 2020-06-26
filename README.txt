@@ -11,6 +11,9 @@
 A Linux Kernel subsystem which allows to access files in a specific directory
 of the virtual file system using sessions.
 
+Project made for the Advanced Operating Systems and Virtualization class of
+Sapienza University of Rome.
+
 See docs/REPORT.txt for details.
 
 1) Building
